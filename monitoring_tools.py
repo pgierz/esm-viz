@@ -75,7 +75,13 @@ class awicm_pism(simulation):
                 self.solid_earth = None
                 self.components = [self.atmosphere, self.land_surface, self.ocean, self.ice, self.solid_earth]
                 self.used_components = [component for component in self.components if component is not None]
-                self.awicm_log = logfile(path+"/scripts/"+expid+"_awicm.log")
+                self.awicm_log = logfile(path, expid, "awicm")
+
+        def awicm_progress(self):
+                current_dates = self.awicm_log.get_progress()
+                pbar = tqdm_notebook(total=(current_dates["Final date"] - current_dates["Initial date"]).days)
+                pbar.update((current_dates["Current date"] - current_dates["Initial date"]).days)
+                pbar.close()
 
 class awicm(simulation):
         def __init__(self, expid, path):
@@ -203,7 +209,10 @@ class villma(component):
                 super().__init__(*args)
 
 class logfile():
-        def __init__(self, log):
+        def __init__(self, path, expid, setup):
+                self.path = path
+                self.expid = expid
+                log = self.path+"/scripts/"+self.expid+"_"+setup+".log"
                 log_dataframe = pd.read_table(log,
                                 sep=r" :  | -" ,
                                 skiprows=1,
@@ -235,6 +244,24 @@ class logfile():
                 diffs = [ends[i] - starts[i] for i in range(len(ends))]
                 average_timedelta = sum(diffs, datetime.timedelta(0)) / len(diffs)
                 return average_timedelta
+
+        def get_progress(self):
+                last_job_id = self.dataframe["Job ID"][-1]
+                self.dates = {"Initial date": None,
+                              "Current date": None,
+                              "End date": None,
+                              "Final date": None}
+                script = self.path+"/scripts/"+self.expid+"_"+last_job_id+".log"
+                for line in open(script):
+                        for k in self.dates.keys():
+                                if k in line:
+                                        self.dates[k] = line.split(":")[-1].strip()
+                self.dates["Initial date"] = datetime.datetime.strptime(self.dates["Initial date"], "%Y-%m-%d")
+                self.dates["Current date"] = datetime.datetime.strptime(self.dates["Current date"], "%Y%m%d")
+                self.dates["End date"] = datetime.datetime.strptime(self.dates["End date"], "%Y%m%d")
+                self.dates["Final date"] = datetime.datetime.strptime(self.dates["Final date"], "%Y-%m-%d")
+                return self.dates
+
 
         def get_queuing_walltime(self):
                 # TODO: find a way to get these times in the methods
