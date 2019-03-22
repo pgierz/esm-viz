@@ -17,9 +17,9 @@ import os
 import sys
 
 import paramiko
+import yaml
 
-
-def read_json_simulation_config(json_file):
+def read_json_simulation_config(config):
     """
     Reads a simulation monitoring file and returns a parsed dictionary.
 
@@ -28,8 +28,22 @@ def read_json_simulation_config(json_file):
     json_file : str
         Which file to read to set up the simulation monitoring
     """
-    sim_monitoring_dict = json.loads(json_file)
+    config_file = open(config, 'r')
+    sim_monitoring_dict = yaml.load(config_file)
     return sim_monitoring_dict
+
+
+def rexists(sftp, path):
+    """os.path.exists for paramiko's SCP object"""
+    try:
+        sftp.stat(path)
+    except IOError as e:
+        if e[0] == 2:
+            return False
+        raise
+    else:
+        return True
+
 
 
 class Simulation_Monitor(object):
@@ -79,7 +93,26 @@ class Simulation_Monitor(object):
         analysis_script : str
             The script that will automatically analyze this component
         """
-        with self.ssh.open_sftp(self.host, username=self.user) as sftp:
+        with self.ssh.open_sftp() as sftp:
             remote_analysis_script_directory = self.basedir + "/analysis/" + component
-            sftp.mkdir(remote_analysis_script_directory)
-            sftp.put(analysis_script, remote_analysis_script_directory+"/"+ analysis_script)
+            if not rexists(sftp, remote_analysis_script_directory):
+                sftp.mkdir(remote_analysis_script_directory)
+            sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
+
+
+MODEL_COMPONENTS = {
+    "AWICM": ["echam", "jsbach", "hdmodel", "fesom"]
+    }
+
+
+if __name__ == "__main__":
+    config = read_json_simulation_config(os.environ.get("HOME")+"/.config/monitoring/example.yaml")
+    monitor = Simulation_Monitor(config['user'], config['host'], config['basedir']) 
+    for component in MODEL_COMPONENTS.get(config["model"]):
+        if component in config:
+            if "Global Timeseries" in config[component]:
+                # TODO: The analysis script here should point to something
+                # actually useful...
+                monitor.copy_analysis_script_for_component(
+                    component,
+                    "/home/csys/pgierz/esm-viz/README.md")
