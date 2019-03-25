@@ -88,7 +88,16 @@ def parse_arguments():
         will probably be in.
     """
     working_path, running_in_exp_dir = determine_running_location()
-    parser = argparse.ArgumentParser(description='Compares namelists')
+    parser = argparse.ArgumentParser(description=
+            """This script compares two sets of namelists
+            and displays the differences, chapter by chapter. If namelists are
+            logically identical and differ only in capitalization and entry
+            order, this is noted. If you are running it from anywhere inside of
+            an esm-style experiment tree, you only need to give the --target
+            parameter. Otherwise, you must give both --source and --target.
+            Order of the passed arguments does not matter.
+            """
+            )
     parser.add_argument("--source", required=not running_in_exp_dir,
                         help="The top of the experiment where the `source` namelists should be taken from")
     parser.add_argument("--target", required=True,
