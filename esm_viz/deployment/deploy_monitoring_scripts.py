@@ -1,9 +1,14 @@
 #!/bin/python
 """
-This script reads a "namelist", since Chris really, really wanted one. It then
+This package reads a "namelist", since Chris really, really wanted one. It then
 deploys a series of analysis scripts to a remote host, and combines several
 jupyter notebooks together to achieve a monitoring system for any
 particular experiment.
+
+This portion of the package contains the following pieces:
+    + reading the configuration yaml file to determine what is being monitored
+    + a class to contain deployment infrastructure; copying analysis scripts to
+      the other computer and running them
 
 Note: ESM-style directory structures are assumed. Otherwise, I'm just at a
 loss...
@@ -16,24 +21,11 @@ import os
 import sys
 
 import paramiko
-import yaml
+
+from esm_viz import read_simulation_config, MODEL_COMPONENTS
 
 __author__ = "Danek, Gierz, Stepanek"
 __version__ = "0.1.0"  # FIXME: Bump this to 1.0.0 once it works
-
-
-def read_simulation_config(config_file):
-    """
-    Reads a simulation monitoring file and returns a parsed dictionary.
-
-    Parameters:
-    -----------
-    json_file : str
-        Which file to read to set up the simulation monitoring
-    """
-    config_file = open(config_file, 'r')
-    sim_monitoring_dict = yaml.load(config_file)
-    return sim_monitoring_dict
 
 
 def rexists(sftp, path):
@@ -47,7 +39,6 @@ def rexists(sftp, path):
     else:
         return True
 
-
 class Simulation_Monitor(object):
     """
     ``Simulation_Monitor`` can deploy and run simulation monitoring scripts.
@@ -58,9 +49,7 @@ class Simulation_Monitor(object):
 
     1. something that copies the script
     1. something that runs the script.
-    
-    This class might be responsible for both of those things, or maybe just one. I haven't decided yet...
-    
+
     Methods
     -------
     + copy_analysis_script_for_component:
@@ -127,13 +116,12 @@ class Simulation_Monitor(object):
             remote_analysis_script_directory = self.basedir + "/analysis/" + component
             if not rexists(sftp, remote_analysis_script_directory):
                 sftp.mkdir(remote_analysis_script_directory)
-            # TODO: A check if the script is already there. Probably
-            # irrelevant, since copying a few kb of script is trivial...
-            sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
+            if not rexists(sftp, remote_analysis_script_directory+"/"+os.path.basename(analysis_script)):
+                sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
 
     def run_analysis_script_for_component(self, component, analysis_script, args=[]):
         """
-        Runs a script with arguments for a specific componentt
+        Runs a script with arguments for a specific component
 
         Parameters:
         -----------
@@ -142,18 +130,12 @@ class Simulation_Monitor(object):
         analysis_script : str
             Which script to run
         args : list
-            A list of strings for the arguments. If the arguments need flags, they should get "-<FLAG NAME>" as one of the strings
+            A list of strings for the arguments. If the arguments need flags,
+            they should get "-<FLAG NAME>" as one of the strings
         """
+        self.ssh.connect(self.host, username=self.user)
         self.ssh.chdir(self.basedir + "/analysis/" + component)
         self.ssh.exec_command(" ".join(["./"+analysis_script] + args))
-
-
-MODEL_COMPONENTS = {
-    "AWICM": ["echam", "jsbach", "hdmodel", "fesom",],
-    "MPIESM": ["echam", "jsbach", "hdmodel", "mpiom",],
-    "COSMOS": ["echam", "jsbach,", "hdmodel", "mpiom",],
-    "PISM": ["pism",],
-    }
 
 
 if __name__ == "__main__":
@@ -165,6 +147,8 @@ if __name__ == "__main__":
             if "Global Timeseries" in config[component]:
                 # TODO: The analysis script here should point to something
                 # actually useful...
+                # TODO: Here, we need some way to actually get the scripts in,
+                # regardless of where this tool is installed.
                 monitor.copy_analysis_script_for_component(
                     component,
                     "/home/csys/pgierz/esm-viz/analysis/general/say_hello.sh")
