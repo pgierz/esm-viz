@@ -18,11 +18,11 @@ import sys
 import paramiko
 import yaml
 
-__author__ = "Dr. Paul Gierz"
+__author__ = "Danek, Gierz, Stepanek"
 __version__ = "0.1.0"  # FIXME: Bump this to 1.0.0 once it works
 
 
-def read_json_simulation_config(config_file):
+def read_simulation_config(config_file):
     """
     Reads a simulation monitoring file and returns a parsed dictionary.
 
@@ -58,11 +58,15 @@ class Simulation_Monitor(object):
 
     1. something that copies the script
     1. something that runs the script.
-
+    
+    This class might be responsible for both of those things, or maybe just one. I haven't decided yet...
+    
     Methods
     -------
-    + copy_analysis_script_for_component : Copies a specified analysis script to a folder EXPBASE/analysis/<component>
-    + run_analysis_script_for_component : Runs an analysis script with a passed set of arguments.
+    + copy_analysis_script_for_component:
+        Copies a specified analysis script to a folder EXPBASE/analysis/<component>
+    + run_analysis_script_for_component:
+        Runs an analysis script with a passed set of arguments.
     """
     def __init__(self, user, host, basedir):
         """
@@ -77,7 +81,7 @@ class Simulation_Monitor(object):
         user : str
             The username
         ssh : paramiko.SSHClient
-            A ssh client which you can use to connect to the host (maybe this should be automatically connected
+            A ssh client which you can use to connect to the host (maybe this should be automatically connected)
         """
         self.basedir = basedir
         self.host = host
@@ -104,7 +108,7 @@ class Simulation_Monitor(object):
         try:
             self.ssh.connect(self.host, username=self.user)
             return True
-        # Maybe we really just need a general except here...
+        # FIXME: Maybe we really just need a general except here...
         except paramiko.ssh_exception.AuthenticationException:
             return False
 
@@ -123,7 +127,26 @@ class Simulation_Monitor(object):
             remote_analysis_script_directory = self.basedir + "/analysis/" + component
             if not rexists(sftp, remote_analysis_script_directory):
                 sftp.mkdir(remote_analysis_script_directory)
+            # TODO: A check if the script is already there. Probably
+            # irrelevant, since copying a few kb of script is trivial...
             sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
+
+    def run_analysis_script_for_component(self, component, analysis_script, args):
+        """
+        Runs a script with arguments for a specific componentt
+
+        Parameters:
+        -----------
+        component : str
+            Which component to run scripts for
+        analysis_script : str
+            Which script to run
+        args : list
+            A list of strings for the arguments. If the arguments need flags, they should get "-<FLAG NAME>" as one of the strings
+        """
+        # FIXME: I can't really believe this is just two lines of code... wat?
+        self.ssh.chdir(self.basedir + "/analysis/" + component)
+        self.exec_command(" ".join(["./"+analysis_script + args]))
 
 
 MODEL_COMPONENTS = {
@@ -135,7 +158,8 @@ MODEL_COMPONENTS = {
 
 
 if __name__ == "__main__":
-    config = read_json_simulation_config(os.environ.get("HOME")+"/.config/monitoring/example.yaml")
+    # TODO: Get the config file from argparser...
+    config = read_simulation_config(os.environ.get("HOME")+"/.config/monitoring/example.yaml")
     monitor = Simulation_Monitor(config['user'], config['host'], config['basedir']) 
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
@@ -144,4 +168,4 @@ if __name__ == "__main__":
                 # actually useful...
                 monitor.copy_analysis_script_for_component(
                     component,
-                    "/home/csys/pgierz/esm-viz/README.md")
+                    "/home/csys/pgierz/esm-viz/analysis/general/say_hello.sh")
