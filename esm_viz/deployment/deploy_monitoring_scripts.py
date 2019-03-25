@@ -131,7 +131,7 @@ class Simulation_Monitor(object):
             # irrelevant, since copying a few kb of script is trivial...
             sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
 
-    def run_analysis_script_for_component(self, component, analysis_script, args):
+    def run_analysis_script_for_component(self, component, analysis_script, args=[]):
         """
         Runs a script with arguments for a specific componentt
 
@@ -144,9 +144,8 @@ class Simulation_Monitor(object):
         args : list
             A list of strings for the arguments. If the arguments need flags, they should get "-<FLAG NAME>" as one of the strings
         """
-        # FIXME: I can't really believe this is just two lines of code... wat?
         self.ssh.chdir(self.basedir + "/analysis/" + component)
-        self.exec_command(" ".join(["./"+analysis_script + args]))
+        self.ssh.exec_command(" ".join(["./"+analysis_script] + args))
 
 
 MODEL_COMPONENTS = {
