@@ -22,7 +22,6 @@ import sys
 
 import paramiko
 
-from esm_viz import read_simulation_config, MODEL_COMPONENTS
 
 __author__ = "Danek, Gierz, Stepanek"
 __version__ = "0.1.0"  # FIXME: Bump this to 1.0.0 once it works
@@ -38,6 +37,7 @@ def rexists(sftp, path):
         raise
     else:
         return True
+
 
 class Simulation_Monitor(object):
     """
@@ -64,13 +64,15 @@ class Simulation_Monitor(object):
         Attributes
         ----------
         basedir : str
-            The directory where the experiment is running. Should point to the top of the experiment
+            The directory where the experiment is running. Should point to the
+            top of the experiment
         host : str
             The compute host
         user : str
             The username
         ssh : paramiko.SSHClient
-            A ssh client which you can use to connect to the host (maybe this should be automatically connected)
+            A ssh client which you can use to connect to the host (maybe this
+            should be automatically connected)
         """
         self.basedir = basedir
         self.host = host
@@ -138,17 +140,3 @@ class Simulation_Monitor(object):
         self.ssh.exec_command(" ".join(["./"+analysis_script] + args))
 
 
-if __name__ == "__main__":
-    # TODO: Get the config file from argparser...
-    config = read_simulation_config(os.environ.get("HOME")+"/.config/monitoring/example.yaml")
-    monitor = Simulation_Monitor(config['user'], config['host'], config['basedir']) 
-    for component in MODEL_COMPONENTS.get(config["model"]):
-        if component in config:
-            if "Global Timeseries" in config[component]:
-                # TODO: The analysis script here should point to something
-                # actually useful...
-                # TODO: Here, we need some way to actually get the scripts in,
-                # regardless of where this tool is installed.
-                monitor.copy_analysis_script_for_component(
-                    component,
-                    "/home/csys/pgierz/esm-viz/analysis/general/say_hello.sh")

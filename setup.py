@@ -37,6 +37,7 @@ setup(
     entry_points={
         'console_scripts': [
             'esm_viz=esm_viz.cli:main',
+            'esm_viz_deploy=esm_viz.scripts.deploy:deploy'
         ],
     },
     install_requires=requirements,
