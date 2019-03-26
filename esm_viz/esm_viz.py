@@ -7,8 +7,12 @@ MODEL_COMPONENTS = {
     "AWICM": ["echam", "jsbach", "hdmodel", "fesom",],
     "MPIESM": ["echam", "jsbach", "hdmodel", "mpiom",],
     "COSMOS": ["echam", "jsbach,", "hdmodel", "mpiom",],
-    "PISM": ["pism",],
+    "PISM_STANDALONE": ["pism",],
     }
+
+COUPLED_SETUPS = {
+        "awicm pism_standalone": ["awicm", "pism_standalone",],
+        }
 
 
 def read_simulation_config(config_file):

@@ -17,11 +17,19 @@ the script will find all namelist.* files found in::
 and compare them to whatever experiment is given as a ``target``.
 
 """
-import argparse
 from pathlib import Path
+import argparse
 import os
+import subprocess
+import sys
 
-import f90nml
+try:
+    import f90nml
+except ImportError:
+    try:
+        subprocess.check_output("pip install --user f90nml")
+    except OSError:
+        sys.exit("Could not install requirement f90nml")
 
 __version__ = "0.1.0"
 __author__ = "Paul Gierz"

@@ -31,12 +31,9 @@ def rexists(sftp, path):
     """os.path.exists for paramiko's SCP object"""
     try:
         sftp.stat(path)
-    except IOError as error:
-        if error[0] == 2:
-            return False
-        raise
-    else:
         return True
+    except FileNotFoundError:
+        return False
 
 
 class Simulation_Monitor(object):
@@ -79,6 +76,7 @@ class Simulation_Monitor(object):
         self.user = user
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if not self._can_login_to_host_without_password():
             with open(os.environ["HOME"]+"/simulation_monitoring_errors", "a") as error_file:
                 error_file.write("Hey, you should setup ssh keys for %s. Try using esm-viz/deployment/generate_automatic_ssh_key.sh" % host)
@@ -98,12 +96,13 @@ class Simulation_Monitor(object):
         """
         try:
             self.ssh.connect(self.host, username=self.user)
+            self.ssh.close()
             return True
         # FIXME: Maybe we really just need a general except here...
         except paramiko.ssh_exception.AuthenticationException:
             return False
 
-    def copy_analysis_script_for_component(self, component, analysis_script):
+    def copy_analysis_script_for_component(self, component, analysis_script, coupling_setup=None):
         """
         Copies a specific analysis script to the correct folder.
 
@@ -114,12 +113,21 @@ class Simulation_Monitor(object):
         analysis_script : str
             The script that will automatically analyze this component
         """
+        self.ssh.connect(self.host, username=self.user)
         with self.ssh.open_sftp() as sftp:
-            remote_analysis_script_directory = self.basedir + "/analysis/" + component
+            if coupling:
+                remote_analysis_script_directory = self.basedir+"/"+coupling_setup+"/"+component
+            else:
+                remote_analysis_script_directory = self.basedir + "/analysis/" + component
             if not rexists(sftp, remote_analysis_script_directory):
                 sftp.mkdir(remote_analysis_script_directory)
             if not rexists(sftp, remote_analysis_script_directory+"/"+os.path.basename(analysis_script)):
+                logging.info("Copying %s to %s", os.path.basename(analysis_script), remote_analysis_script_directory)
                 sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
+            logging.info(sftp.stat(remote_analysis_script_directory+"/"+os.path.basename(analysis_script)))
+            sftp.chmod(remote_analysis_script_directory+"/"+os.path.basename(analysis_script), 0o755)
+            logging.info(sftp.stat(remote_analysis_script_directory+"/"+os.path.basename(analysis_script)))
+        self.ssh.close()
 
     def run_analysis_script_for_component(self, component, analysis_script, args=[]):
         """
@@ -136,7 +144,16 @@ class Simulation_Monitor(object):
             they should get "-<FLAG NAME>" as one of the strings
         """
         self.ssh.connect(self.host, username=self.user)
-        self.ssh.chdir(self.basedir + "/analysis/" + component)
-        self.ssh.exec_command(" ".join(["./"+analysis_script] + args))
-
-
+        logging.info("Executing...")
+        self.ssh.invoke_shell()
+        args = [arg.replace("$", "\$").replace("{", "\{").replace("}", "\}") for arg in args]
+        stdin, stdout, stderr = self.ssh.exec_command("bash -l -c 'cd "+self.basedir+"/analysis/"+component+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
+                get_pty=True)
+        for stream, tag in zip([stdin, stdout, stderr], ["stdin", "stdout", "stderr"]):
+            try:
+                logging.info(tag)
+                for line in stream.readlines():
+                    logging.info(line)
+            except OSError:
+                logging.info("Couldn't open %s", tag)
+        self.ssh.close()
