@@ -28,7 +28,7 @@ def merge_notebooks(filenames):
     if not hasattr(merged.metadata, 'name'):
         merged.metadata.name = ''
     merged.metadata.name += "_merged"
-    print(nbformat.writes(merged))
+    return nbformat.writes(merged)
 
 if __name__ == '__main__':
     notebooks = sys.argv[1:]
@@ -36,4 +36,5 @@ if __name__ == '__main__':
         print(__doc__, file=sys.stderr)
         sys.exit(1)
         
-    merge_notebooks(notebooks)
+    print(merge_notebooks(notebooks))
+        
