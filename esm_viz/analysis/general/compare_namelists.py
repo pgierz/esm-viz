@@ -73,6 +73,9 @@ def determine_running_location():
             if working_path == Path(working_path.root):
                 # Got to root of the file system; probably running from outside
                 # of an experiment directory:
+                #
+                # PG: Probably, this is wrong? Shouldn't ``Path.cwd`` actually
+                # be a called function, e.g. ``Path.cwd()``?
                 return (Path.cwd, False)
 
 
@@ -82,7 +85,7 @@ def parse_arguments():
 
     Parameters
     ----------
-    running_in_esm_dir : Bool
+    running_in_esm_dir : bool
         A boolean determining if we are running in an esm-style directory. In
         this case, the source directory is optional.
 

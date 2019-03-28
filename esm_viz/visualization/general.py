@@ -170,13 +170,15 @@ def plot_usage(exp_usage, total_usage, total_quota):
         print("This experiment uses %s" % bytes2human(exp_usage))
 
         
-def get_log_output(exp_path):
+def get_log_output(config):
+    exp_path = config['basedir']
+    model_name = config['model'].lower()
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(config['host'], username=config['user'])
     expid = exp_path.split("/")[-1]
-    stdin, stdout, stderr = ssh.exec_command('cat '+exp_path+"/scripts/"+expid+".log")
+    stdin, stdout, stderr = ssh.exec_command('cat '+exp_path+"/scripts/"+expid+"_"+model_name+"_compute.log")
     return stdout
 
 
@@ -193,3 +195,79 @@ def generate_dataframe_from_mpimet_logfile(log):
     log_dataframe = pd.concat([log_dataframe, middle_column], axis=1)
     log_dataframe.set_index(pd.to_datetime(log_dataframe.index), inplace=True)
     return log_dataframe
+
+
+def compute_effective_throughput(log_dataframe, verbose=False):
+    starts = log_dataframe[log_dataframe.State == " start"]
+    ends = log_dataframe[log_dataframe.State == " done"]
+    # Drop the duplicated starts:
+    starts.drop_duplicates(subset="Run Number", keep="last")
+    merged = pd.concat([starts, ends])
+    groupby = merged.groupby("Run Number")
+    run_diffs = {"Run Number": [], "Time Diff": []}
+    for name, group in groupby:
+        run_diffs["Run Number"].append(int(name))
+        run_diffs["Time Diff"].append(group.index[-1] - group.index[0])
+    diffs = pd.DataFrame(run_diffs).sort_values("Run Number").set_index("Run Number")
+    DAY = datetime.timedelta(1)
+    throughput = DAY / diffs.mean()
+    if verbose:
+        print("Your run is taking %s on average" % average_timedelta)
+        print("this is an effective throughput of %s simulated runs per day, assuming no queue time" % throughput)
+    return diffs.mean(), throughput, diffs
+
+
+# Average walltime and effective number of simulated years per day:
+# FIXME: What about coupling????
+def compute_walltime_and_throughput(config, esm_style=True):
+    # NOTE: ``exp`` is actually ``basedir``
+    exp = config['basedir']
+    model = config['model'].lower() 
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(config['host'], username=config['user'])
+    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; grep -i \"initial_date\" *.run")
+    start_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
+    # This won't work for coupled experiments:
+    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; cat *.date")
+    if esm_style:
+        current_year = stdout.readlines()[0].split("=")[-1].split("-")[0]
+    else:
+        current_year = stdout.readlines()[0].split()[0][:4]
+    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; grep -i \"final_date\" *.run")
+    final_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
+    start_year = int(start_year)
+    print(current_year)
+    current_year = int(current_year) - start_year
+    final_year = int(final_year) - start_year
+
+    walltime, throughput, diffs = compute_effective_throughput(
+        generate_dataframe_from_mpiesm_logfile(get_log_output(exps_full[0])))
+    df = pd.DataFrame.from_dict({"Walltime": walltime,
+                       "Throughput": throughput}, orient="index")
+    return df
+
+
+def simulation_timeline():
+    # Simulation Timeline
+    log_dataframe = generate_dataframe_from_mpiesm_logfile(get_log_output(exps_full[0]))
+    # Drop the last entry if it's start:
+    if "start" in log_dataframe.iloc[-1]["State"]:
+        end_of_log = log_dataframe.iloc[:-1].tail(30)
+    else:
+        end_of_log = log_dataframe.tail(30)
+    end_groups = end_of_log.groupby("Run Number")
+    f, ax = plt.subplots(1, 1, dpi=150, figsize=(15, 1.5))
+    for name, group in end_groups:
+        bdate = group.index[0]
+        edate = group.index[1]
+        edate, bdate = [mdates.date2num(item) for item in (edate, bdate)]
+        # The color is the same as the progressbar below, use the colormeter to figure it out.
+        ax.barh(0, edate - bdate, left=bdate, height=0.2, color=(217./255., 83./255., 79./255.),
+                edgecolor="black")
+    ax.set_ylim(-0.5, 0.5)
+    for direction in ["top", "left", "right"]:
+        ax.spines[direction].set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.xaxis_date()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M %d.%m.%y"))
