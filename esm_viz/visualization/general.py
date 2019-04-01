@@ -21,7 +21,7 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 import numpy as np
 from IPython.display import display_html
-
+from IPython.core.display import display, HTML
 
 
 SLURM_QUEUE_COMMAND = r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
@@ -177,7 +177,7 @@ def plot_usage(exp_usage, total_usage, total_quota):
                autopct='%1.1f%%', shadow=True, startangle=90,
                explode=(0.1, 0, 0), textprops={"fontsize": 5})
     else:
-        print("This experiment uses %s" % bytes2human(exp_usage))
+        display(HTML("This experiment uses %s space" % bytes2human(exp_usage))
 
         
 def get_log_output(config, esm_style=True):
