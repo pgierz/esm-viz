@@ -8,7 +8,7 @@ coupling: awicm pism_standalone
 
 general:
         - queue info
-        - progress
+        - run efficiency
         - disk usage
 echam:
         Global Timeseries:

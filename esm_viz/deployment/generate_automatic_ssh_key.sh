@@ -9,7 +9,7 @@ echo "Please enter the hostname for the machine you want to generate keys for an
 read HOST
 
 if [ ! -f ${HOME}/.ssh/id_rsa.pub ]; then
-        ssh-keygen -t rsa
+        ssh-keygen -t rsa -b 4096
 fi
 ssh ${USER}@${HOST} mkdir -p .ssh
 cat ${HOME}/.ssh/id_rsa.pub | \
