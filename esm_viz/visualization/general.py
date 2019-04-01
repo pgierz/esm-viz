@@ -20,6 +20,7 @@ import matplotlib
 from matplotlib import cm
 from matplotlib import pyplot as plt
 import numpy as np
+from IPython.display import display_html
 
 
 
@@ -402,6 +403,7 @@ def gauge(labels=['LOW','MEDIUM','HIGH','VERY HIGH','EXTREME'], \
     plt.tight_layout()
     if fname:
         fig.savefig(fname, dpi=200)
+    return ax
 
         
 def find_nearest(array, value):
@@ -419,5 +421,56 @@ def run_efficiency(config):
     arrow_level = find_nearest(levels, 100*efficiency) + 1
     levels = ["%.0f" % number for number in levels]
     levels = [l+"%" for l in levels]
-    gauge(labels=levels, \
-      colors='RdYlGn_r', arrow=arrow_level, title='Run Efficiency') 
+    ax = gauge(labels=levels, \
+      colors='RdYlGn_r', arrow=arrow_level, title='Run Efficiency')
+    prefix = \
+"""
+ <!DOCTYPE html>
+<html>
+<head>
+<style>
+* {
+    box-sizing: border-box;
+}
+
+.column {
+    float: left;
+    width: 33.33%;
+    padding: 5px;
+}
+
+/* Clearfix (clear floats) */
+.row::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+</style>
+</head>
+<body>
+
+<h2>title</h2>
+
+<div class="row">
+  <div class="column">
+"""
+    suffix = \
+"""
+  </div>
+  <div class="column">
+    <img src="pic_file.png" alt="Graph" style="width:100%">
+  </div>
+</div>
+</body>
+</html>
+"""
+    df = pd.DataFrame({
+        "Mean Walltime": diffs["Wall Time"].mean(),
+        "Mean Queuing Time": diffs["Queue Time"].mean(),
+        "Run Efficiency": efficiency*100
+        })
+    title = config['basedir'].split("/")[-1]+"_efficiency"
+    fig = ax.get_figure()
+    fig.savefig(title+".png")
+    html = prefix.replace('title', title)+df.to_html()+suffix.replace('pic_file.png', title+".png")
+    display_html(html, raw=True)
