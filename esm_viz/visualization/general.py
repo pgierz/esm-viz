@@ -449,8 +449,6 @@ def run_efficiency(config):
 </head>
 <body>
 
-<h2>title</h2>
-
 <div class="row">
   <div class="column">
 """
@@ -464,13 +462,14 @@ def run_efficiency(config):
 </body>
 </html>
 """
-    df = pd.DataFrame({
+    df = pd.DataFrame.from_dict({
         "Mean Walltime": diffs["Wall Time"].mean(),
         "Mean Queuing Time": diffs["Queue Time"].mean(),
         "Run Efficiency": efficiency*100
-        })
+        }, orient='index', columns=["Run Statistics"])
     title = config['basedir'].split("/")[-1]+"_efficiency"
     fig = ax.get_figure()
-    fig.savefig(title+".png")
+    fig.savefig(os.environ.get("HOME")+"/public_html/"+title+".png", dpi=200)
+    plt.close(fig)
     html = prefix.replace('title', title)+df.to_html()+suffix.replace('pic_file.png', title+".png")
     display_html(html, raw=True)
