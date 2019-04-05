@@ -54,9 +54,21 @@ class Simulation_Monitor(object):
     + run_analysis_script_for_component:
         Runs an analysis script with a passed set of arguments.
     """
-    def __init__(self, user, host, basedir):
+    def __init__(self, user, host, basedir, coupling):
         """
         Initializes a new monitoring object.
+
+        Parameters
+        ----------
+        user : str
+            The username you will use to connect to the computing host
+        host : str
+            The machine name you will connect to
+        basedir : str
+            The base directory of the experiment you will monitory
+        coupling : str or boo
+            A string denoting which iteratively coupled setup is being
+            monitored, or False
 
         Attributes
         ----------
@@ -74,6 +86,9 @@ class Simulation_Monitor(object):
         self.basedir = basedir
         self.host = host
         self.user = user
+        self.coupling_setup = coupling
+
+
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -98,11 +113,10 @@ class Simulation_Monitor(object):
             self.ssh.connect(self.host, username=self.user)
             self.ssh.close()
             return True
-        # FIXME: Maybe we really just need a general except here...
         except paramiko.ssh_exception.AuthenticationException:
             return False
 
-    def copy_analysis_script_for_component(self, component, analysis_script, coupling_setup=None):
+    def copy_analysis_script_for_component(self, component, analysis_script):
         """
         Copies a specific analysis script to the correct folder.
 
@@ -115,18 +129,29 @@ class Simulation_Monitor(object):
         """
         self.ssh.connect(self.host, username=self.user)
         with self.ssh.open_sftp() as sftp:
-            if coupling:
-                remote_analysis_script_directory = self.basedir+"/"+coupling_setup+"/"+component
+            if self.coupling_setup:
+                # FIXME: This is specific to Dirk's version of esm-tools...
+                remote_analysis_script_directory = self.basedir+"/"+self.coupling_setup+"/analysis/"+component
             else:
                 remote_analysis_script_directory = self.basedir + "/analysis/" + component
+
+            remote_script = remote_analysis_script_directory + "/" + os.path.basename(analysis_script)
+
             if not rexists(sftp, remote_analysis_script_directory):
                 sftp.mkdir(remote_analysis_script_directory)
-            if not rexists(sftp, remote_analysis_script_directory+"/"+os.path.basename(analysis_script)):
-                logging.info("Copying %s to %s", os.path.basename(analysis_script), remote_analysis_script_directory)
-                sftp.put(analysis_script, remote_analysis_script_directory+"/"+os.path.basename(analysis_script))
-            logging.info(sftp.stat(remote_analysis_script_directory+"/"+os.path.basename(analysis_script)))
-            sftp.chmod(remote_analysis_script_directory+"/"+os.path.basename(analysis_script), 0o755)
-            logging.info(sftp.stat(remote_analysis_script_directory+"/"+os.path.basename(analysis_script)))
+            if not rexists(sftp, remote_script):
+                logging.info(
+                        "Copying %s to %s",
+                        os.path.basename(analysis_script),
+                        remote_analysis_script_directory
+                        )
+                sftp.put(
+                        analysis_script,
+                        remote_script
+                        )
+            logging.info("Ensuring script is executable...")
+            sftp.chmod(remote_script, 0o755)
+            logging.debug(sftp.stat(remote_script))
         self.ssh.close()
 
     def run_analysis_script_for_component(self, component, analysis_script, args=[]):
@@ -141,19 +166,20 @@ class Simulation_Monitor(object):
             Which script to run
         args : list
             A list of strings for the arguments. If the arguments need flags,
-            they should get "-<FLAG NAME>" as one of the strings
+            they should get "-<FLAG NAME>" as one of the strings. The default
+            is to assume no arguments are needed.
         """
         self.ssh.connect(self.host, username=self.user)
-        logging.info("Executing...")
+        logging.info("Executing %s...", analysis_script)
         self.ssh.invoke_shell()
         args = [arg.replace("$", "\$").replace("{", "\{").replace("}", "\}") for arg in args]
         stdin, stdout, stderr = self.ssh.exec_command("bash -l -c 'cd "+self.basedir+"/analysis/"+component+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
                 get_pty=True)
         for stream, tag in zip([stdin, stdout, stderr], ["stdin", "stdout", "stderr"]):
             try:
-                logging.info(tag)
+                logging.debug(tag)
                 for line in stream.readlines():
-                    logging.info(line)
+                    logging.debug(line)
             except OSError:
-                logging.info("Couldn't open %s", tag)
+                logging.debug("Couldn't open %s", tag)
         self.ssh.close()

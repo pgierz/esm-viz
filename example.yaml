@@ -1,10 +1,8 @@
 user: a270077
 host: mistral.dkrz.de
 basedir: /work/ba0989/a270077/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
-# /work/ba0989/a270077/AWICM/LGM_6hourly_PMIP4
 model: AWICM
 coupling: awicm pism_standalone
-
 
 general:
         - queue info

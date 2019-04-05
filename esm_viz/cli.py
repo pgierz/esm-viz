@@ -30,33 +30,57 @@ def main(args=None):
 @click.option('--quiet', default=False, is_flag=True)
 @click.option('--expid', default="example", help="The YAML file found in ~/.config/monitoring")
 def deploy(expid, quiet):
+    """
+    Deploys a script to a computation host (supercompute) and runs it.
+
+    Parameters
+    ----------
+    expid : str
+        The experiment that will be monitored
+    quiet : bool
+        Turn off more verbose logging
+    """
     if quiet:
         logging.basicConfig(level=logging.ERROR)
     else:
         logging.basicConfig(level=logging.INFO)
-    config = read_simulation_config(os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml")
-    coupling = config.get("coupling", False)
-    monitor = Simulation_Monitor(config['user'], config['host'], config['basedir'], coupling)
+
+    config = read_simulation_config(
+        os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml"
+        )
+    monitor = Simulation_Monitor(
+        config.get('user'),
+        config.get('host'),
+        config.get('basedir'),
+        config.get("coupling", False)
+        )
+
     analysis_script_path = module_path+"/analysis"
+
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
             if "Global Timeseries" in config[component]:
-                logging.info(analysis_script_path+"/echam/monitoring_echam_global_timeseries.sh")
-                monitor.copy_analysis_script_for_component(
-                    component,
-                    analysis_script_path+"/echam/monitoring_echam6_temp2.sh")
-                # In YAML, the variable: file_pattern comes back as a
+                # In YAML, the variable vairable_container comes back as a
                 # dictionary, so we need to unpack a bit:
                 for variable_container in config[component]['Global Timeseries']:
                     for var in variable_container:
                         variable = var
                         file_pattern = variable_container[var]
-                    monitor.run_analysis_script_for_component(
-                        component,
-                        "monitoring_echam_global_timeseries.sh", [variable, file_pattern])
-
-
-
+                        specialized_script = analysis_script_path+"/"+component+"/monitoring_"+component+"_global_timeseries_"+variable+".sh"
+                        if os.path.isfile(specialized_script):
+                            script_to_run = specialized_script
+                        else:
+                            script_to_run = "montoring_"+component+"_global_timeseries.sh"
+                        # TODO: How to include arguments here?
+                        monitor.copy_analysis_script_for_component(
+                            component,
+                            script_to_run
+                            )
+                        monitor.run_analysis_script_for_component(
+                            component,
+                            script_to_run,
+                            [variable, file_pattern]
+                            )
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
