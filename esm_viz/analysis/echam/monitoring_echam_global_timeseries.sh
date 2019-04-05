@@ -4,15 +4,9 @@
 # different experiments. ESM-runscript style directory trees are assumed.
 
 module load cdo
-echo "\$0=$0"
-echo "BASH_SOURCE=$BASH_SOURCE"
 CURRENT_DIR=$(cd $(dirname $0) && pwd)
 EXP_BASE_DIR=$(cd $(dirname $0)/../../ && pwd)
 EXP_ID=$(basename ${EXP_BASE_DIR})
-
-echo "CURRENT_DIR=$CURRENT_DIR"
-echo "EXP_BASE_DIR=$EXP_BASE_DIR"
-echo "EXP_ID=$EXP_ID"
 
 OUTDATA_DIR_ECHAM=${EXP_BASE_DIR}/outdata/echam
 ANALYSIS_DIR_ECHAM=${EXP_BASE_DIR}/analysis/echam
@@ -42,7 +36,7 @@ fi
 
 # Get all data files from the outdata
 cdo -f nc -t echam6 \
-        select,name=temp2 ${OUTDATA_DIR_ECHAM}/"${FILENAME}" \
+        select,name=${VARNAME} ${OUTDATA_DIR_ECHAM}/"${FILENAME}" \
         ${ANALYSIS_DIR_ECHAM}/${FILENAME_RAW} || echo "something went wrong, we continue anyway ..."
 
 rmlist="${ANALYSIS_DIR_ECHAM}/${FILENAME_RAW} $rmlist"
