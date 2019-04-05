@@ -177,9 +177,9 @@ def plot_usage(exp_usage, total_usage, total_quota):
                autopct='%1.1f%%', shadow=True, startangle=90,
                explode=(0.1, 0, 0), textprops={"fontsize": 5})
     else:
-        display(HTML("This experiment uses %s space" % bytes2human(exp_usage))
+        display(HTML("This experiment uses %s space" % bytes2human(exp_usage)))
 
-        
+
 def get_log_output(config, esm_style=True):
     exp_path = config['basedir']
     model_name = config['model'].lower()
