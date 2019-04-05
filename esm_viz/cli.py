@@ -9,6 +9,7 @@ import inspect
 import logging
 
 import click
+from crontab import CronTab
 
 import esm_viz
 from esm_viz.deployment import Simulation_Monitor
@@ -19,12 +20,31 @@ module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 @click.group()
 def main(args=None):
-    """Console script for esm_viz."""
-    click.echo("Replace this message by putting your code into "
-               "esm_viz.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
     return 0
 
+@main.command()
+@click.option("--expid", default="example", help="The YAML file found in ~/.config/monitoring")
+@click.option("--frequency", default=2, help="How often to run monitoring for this experiment (Default is every 2 hours)")
+def schedule(expid, frequency):
+    """
+    Schedule a job for automatic monitoring
+
+    Parameters
+    ----------
+    expid : str
+        The experiment that will be monitored
+    frequency : int
+        How often to monitor your job (in hours, minimum is 1)
+    """
+    cron = CronTab(user=True)
+    job = cron.new(
+            command='/scratch/work/pgierz/anaconda3/bin/esm_viz deploy '+expid+'; /scratch/work/pgierz/anaconda3/bin/esm_viz combine '+expid,
+            comment='Monitoring for '+expid)
+    job.hour.every(frequency)
+    if job.is_valid():
+        job.enable()
+        cron.write()
+        click.echo("Successfully scheduled automatic monitoring of %s every %s hours" % (expid, frequency))
 
 @main.command()
 @click.option('--quiet', default=False, is_flag=True)
