@@ -8,6 +8,8 @@ general:
         - queue info
         - run efficiency
         - disk usage
+        - simulation timeline
+        - progress bar
 echam:
         Global Timeseries:
                 - temp2: ${EXP_ID}_echam6_echam_??????.grb

@@ -19,9 +19,12 @@ import os, sys
 import matplotlib
 from matplotlib import cm
 from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
+
 import numpy as np
 from IPython.display import display_html
 from IPython.core.display import display, HTML
+import re
 
 
 SLURM_QUEUE_COMMAND = r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
@@ -49,6 +52,10 @@ QUOTA_COMMANDS = {
     'stan1.awi.de': None,
         }
 
+
+def stripComments(code):
+    code = str(code)
+    return re.sub(r'(?m) *#.*\n?', '', code)
 
 def queue_info(config):
     """
@@ -265,7 +272,6 @@ def compute_walltime_and_throughput(config, esm_style=True):
     stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; grep -i \"final_date\" *.run")
     final_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
     start_year = int(start_year)
-    print(current_year)
     current_year = int(current_year) - start_year
     final_year = int(final_year) - start_year
 
@@ -276,8 +282,52 @@ def compute_walltime_and_throughput(config, esm_style=True):
     return df
 
 
-def simulation_timeline(log_df):
-    # Drop the last entry if it's start:
+def progress_bar(config):
+    log = get_log_output(config)
+    log_df = generate_dataframe_from_esm_logfile(log)
+    diffs = compute_throughput(log_df)[2]
+    throughput = datetime.timedelta(1) / diffs['Wall Time'].mean()
+    exp = config['basedir']
+    model = config['model'].lower() 
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(config['host'], username=config['user'])
+    date_filename = exp.split("/")[-1]+"_"+model+".date"
+    remote_command =  "cd "+config['basedir']+'/scripts/; cat '+date_filename+" |awk '{ print $1 }'"
+    stdin, stdout, stderr = client.exec_command(remote_command)
+    # stdout is now something like 19500101
+    # Assume that you get something like Y*YMMDD; so cut off the last 4 digits (note that we dont know how many places the year has; so we need to cut from the end)
+    current_date = int(stdout.readlines()[0][:-5])
+    runscript_file = config.get('runscript', config['basedir']+'/scripts/*run')
+    # POTENTIAL BUG: These things are all very dependent on the runscript's way of defining time control. It might be better to do this somehow differently    
+    start_year = client.exec_command("grep INITIAL_DATE_"+model+" "+runscript_file)[1].readlines()[0]
+    final_year = client.exec_command("grep FINAL_DATE_"+model+" "+runscript_file)[1].readlines()[0]
+    # POTENTIAL BUG: What about people who run on monthly basis?
+    run_size = client.exec_command("grep NYEAR_"+model+" "+runscript_file)[1].readlines()[0]
+    # Reformat to get just the years and run sizes
+    start_year = int(start_year.split("=")[1].split("-")[0])
+    final_year = int(final_year.split("=")[1].split("-")[0])
+    run_size = int(stripComments(" ".join(run_size.split("=")[1].split())))
+
+    total_number_of_runs = int((final_year - start_year) / run_size)
+    years_per_day = throughput
+
+    years_left = final_year - current_date
+    days_left = years_left / years_per_day
+    finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
+    r_bar = " "+str(total_number_of_runs - current_date)+"/"+str(total_number_of_runs) +", Throughput ~"+str(np.round(years_per_day, 2))+"runs/day"
+    from tqdm import tnrange, tqdm_notebook
+    pbar = tqdm_notebook(total=total_number_of_runs, 
+                         desc="Done on: "+finishing_date.strftime("%d %b, %Y"),
+                         bar_format="{n}/|/{l_bar} "+r_bar)
+    pbar.update(int(total_number_of_runs - years_left))
+    pbar.close()
+    
+    
+def simulation_timeline(config):
+    log = get_log_output(config)
+    log_df = generate_dataframe_from_esm_logfile(log)
+    # Drop the last entry if it's start
     if "start" in log_df.iloc[-1]["State"]:
         end_of_log = log_df.iloc[:-1].tail(30)
     else:
@@ -322,7 +372,7 @@ def gauge(labels=['LOW','MEDIUM','HIGH','VERY HIGH','EXTREME'], \
         raise Exception("\n\nThe category ({}) is greated than \
         the length\nof the labels ({})".format(arrow, N))
  
-    
+
     """
     if colors is a string, we assume it's a matplotlib colormap
     and we discretize in N discrete colors 
@@ -418,10 +468,8 @@ def run_efficiency(config):
     diffs = compute_throughput(log_df)[2]
     throughput = datetime.timedelta(1) / diffs['Wall Time'].mean()
     efficiency = diffs["Wall Time"].mean() / (diffs["Queue Time"].mean() + diffs["Wall Time"].mean())
-    print(efficiency)
     levels = np.arange(0, 105, 5)
     arrow_level = int(find_nearest(levels, 100.*efficiency) + 1.)
-    print(arrow_level)
     levels = ["%.0f" % number for number in levels]
     levels = [l+"%" for l in levels]
     figure_title = config['basedir'].split("/")[-1]+"_efficiency"

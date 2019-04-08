@@ -41,4 +41,3 @@ def combine(expid, quiet):
 
 if __name__ == "__main__":
     combine()
-
