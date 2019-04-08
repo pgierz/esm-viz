@@ -25,5 +25,5 @@ def read_simulation_config(config_file):
         Which file to read to set up the simulation monitoring
     """
     config_file = open(config_file, 'r')
-    sim_monitoring_dict = yaml.load(config_file)
+    sim_monitoring_dict = yaml.load(config_file, Loader=yaml.FullLoader)
     return sim_monitoring_dict
