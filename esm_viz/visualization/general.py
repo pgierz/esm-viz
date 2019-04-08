@@ -401,9 +401,9 @@ def gauge(labels=['LOW','MEDIUM','HIGH','VERY HIGH','EXTREME'], \
     ax.axes.set_yticks([])
     ax.axis('equal')
     plt.tight_layout()
-    if fname:
-        fig.savefig(fname, dpi=200)
-    return ax
+    fig.savefig(fname, dpi=200)
+    plt.close(fig)
+
 
         
 def find_nearest(array, value):
@@ -416,13 +416,25 @@ def run_efficiency(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
     diffs = compute_throughput(log_df)[2]
+    throughput = datetime.timedelta(1) / diffs['Wall Time'].mean()
     efficiency = diffs["Wall Time"].mean() / (diffs["Queue Time"].mean() + diffs["Wall Time"].mean())
+    print(efficiency)
     levels = np.arange(0, 105, 5)
-    arrow_level = find_nearest(levels, 100*efficiency) + 1
+    arrow_level = int(find_nearest(levels, 100.*efficiency) + 1.)
+    print(arrow_level)
     levels = ["%.0f" % number for number in levels]
     levels = [l+"%" for l in levels]
-    ax = gauge(labels=levels, \
-      colors='RdYlGn_r', arrow=arrow_level, title='Run Efficiency')
+    figure_title = config['basedir'].split("/")[-1]+"_efficiency"
+    gauge_figure = os.environ.get("HOME")+"/public_html/"+figure_title+".png"
+    if os.path.exists(gauge_figure):
+        os.remove(gauge_figure)
+    gauge(
+        labels=levels,
+        colors='RdYlGn_r',
+        arrow=arrow_level,
+        title='Run Efficiency',
+        fname=gauge_figure
+        )
     prefix = \
 """
  <!DOCTYPE html>
@@ -465,11 +477,9 @@ def run_efficiency(config):
     df = pd.DataFrame.from_dict({
         "Mean Walltime": diffs["Wall Time"].mean(),
         "Mean Queuing Time": diffs["Queue Time"].mean(),
+        "Optimal Throughput": throughput,
+        "Actual Throughput": throughput*efficiency,
         "Run Efficiency": efficiency*100
         }, orient='index', columns=["Run Statistics"])
-    title = config['basedir'].split("/")[-1]+"_efficiency"
-    fig = ax.get_figure()
-    fig.savefig(os.environ.get("HOME")+"/public_html/"+title+".png", dpi=200)
-    plt.close(fig)
-    html = prefix.replace('title', title)+df.to_html()+suffix.replace('pic_file.png', title+".png")
+    html = prefix.replace('title', figure_title)+df.to_html()+suffix.replace('pic_file.png', figure_title+".png")
     display_html(html, raw=True)
