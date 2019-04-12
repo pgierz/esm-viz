@@ -11,7 +11,7 @@ import io
 import os
 import sys
 
-from IPython import nbformat
+import nbformat
 
 def merge_notebooks(filenames):
     merged = None
