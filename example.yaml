@@ -1,19 +1,41 @@
+# Configuration of the experiment details on the COMPUTATION host:
 user: a270077
 host: mistral.dkrz.de
 basedir: /work/ba0989/a270077/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
 model: AWICM
 coupling: awicm pism_standalone
 
+# Configuration of where the data for monitoring should be copied to on the
+# VISUALIZATION host. Note that this replaces everything up to your main user
+# directory on the supercomputer to keep the experiment trees looking as
+# similar as possible. In this example file this means that the monitoring
+# files will be copied from:
+#
+# /work/ba0989/a270077/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
+#
+# to
+#
+# /scratch/work/pgierz/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
+storagedir: /scratch/work/pgierz/
+
+# Note that for general monitoring information; the little minus signs by the list
+# of things you want is **mandatory**
 general:
         - queue info
         - run efficiency
         - disk usage
         - simulation timeline
         - progress bar
+
+# Note that the lack of minus signs is also **mandatory**
 echam:
         Global Timeseries:
-                - temp2: ${EXP_ID}_echam6_echam_??????.grb
-                - aprt
+                temp2:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                # Here; anything may be included that would be able to be passed to ax.plot
+                                linewidth: 1 
+                                color: 'black'
         Climatology Maps:
                 - temp2
                 - aprt
