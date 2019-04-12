@@ -289,6 +289,7 @@ class Simulation_Monitor(object):
             remote_analysis_script_directory = self._determine_remote_analysis_dir(component)
             lfile = destination_dir + "/" + fname
             rfile = remote_analysis_script_directory + "/" + fname
+            logging.info("Copying from %s to %s", rfile, lfile)
             sftp.get(rfile, lfile)
         self.ssh.close()
         if copy_running_means:
