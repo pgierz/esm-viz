@@ -3,21 +3,26 @@
 The deployment submodule contain functionality to log in to a remote supercomputer, run analysis jobs, and copy back the results.
 
 This portion of the package contains the following pieces:
+
     + a class to contain deployment infrastructure; copying analysis scripts to
       the other computer and running them
     + Some helper function do deal with paramiko remote paths easily.
 
-..note::
+..note :
      ESM-style directory structures are assumed. Otherwise, I'm just at a loss...
 
 The following functions are defined here:
+
 + rexists : a remote path exists check
 + mkdir_p : a remote version of recursive directory creation
 
 The following classes are defined here:
+
 + Simulation_Monitor : an object to deploy, run, and copy results on a supercomputer.
 
+
 - - - -
+
 """
 import logging
 import os
