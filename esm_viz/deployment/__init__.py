@@ -1,20 +1,23 @@
 #!/bin/python
 """
-This package reads a "namelist", since Chris really, really wanted one. It then
-deploys a series of analysis scripts to a remote host, and combines several
-jupyter notebooks together to achieve a monitoring system for any
-particular experiment.
+The deployment submodule contain functionality to log in to a remote supercomputer, run analysis jobs, and copy back the results.
 
 This portion of the package contains the following pieces:
-    + reading the configuration yaml file to determine what is being monitored
     + a class to contain deployment infrastructure; copying analysis scripts to
       the other computer and running them
+    + Some helper function do deal with paramiko remote paths easily.
 
-Note: ESM-style directory structures are assumed. Otherwise, I'm just at a
-loss...
+..note::
+     ESM-style directory structures are assumed. Otherwise, I'm just at a loss...
 
-Dr. Paul Gierz
-March 2019
+The following functions are defined here:
++ rexists : a remote path exists check
++ mkdir_p : a remote version of recursive directory creation
+
+The following classes are defined here:
++ Simulation_Monitor : an object to deploy, run, and copy results on a supercomputer.
+
+- - - -
 """
 import logging
 import os
@@ -29,7 +32,21 @@ __version__ = "0.1.0"
 
 
 def rexists(sftp, path):
-    """os.path.exists for paramiko's SCP object"""
+    """
+    os.path.exists for paramiko's SCP object
+    
+    Parameters
+    ----------
+    sftp : paramiko.ssh.sftp
+        The SFTP connection to use
+    path: str
+        The remote filesystem path that should be checked
+        
+    Returns
+    -------
+    bool :
+        True if the remote path exists; False otherwise.
+    """
     try:
         sftp.stat(path)
         return True
@@ -37,8 +54,23 @@ def rexists(sftp, path):
         return False
 
 def mkdir_p(sftp, remote_directory):
-    """Change to this directory, recursively making new folders if needed.
-    Returns True if any folders were created."""
+    """
+    Change to this directory, recursively making new folders if needed.
+    Returns True if any folders were created.
+    
+    This uses recursion. We split up the directory 
+    
+    Parameters
+    ----------
+    sftp : paramiko.sftp
+        The Paramiko SFTP connection to use
+    remote_directory : str
+        The remote directory to create
+        
+    Returns
+    -------
+        True if remote directories needed to be made
+    """
     if remote_directory == '/':
         # absolute path so change directory to root
         sftp.chdir('/')
