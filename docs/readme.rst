@@ -2,42 +2,81 @@
 
 ``ESM Viz`` is a command line tool to schedule automatic monitoring of earth system model simulation. 
 
+First Steps
+-----------
+
 The easiest way to get started is:
 
 .. code-block:: console
 
     $ esm_viz
+
+You will be asked a series of questions; and when you visit the URL that pops up at the end; your good to go!
+
+Installation
+------------
+
+For AWI Users
+^^^^^^^^^^^^^
+
+On ``paleosrv1.awi.de``; the software is already installed. 
+
+
+For Other Users
+^^^^^^^^^^^^^^^
+
+There are several external packages that need to be installed in order for everything to work correctly. The easiest way to get everything in one go is:
+
+.. code-block:: console
+
+    $ pip install esm_viz
     
-Without any arguments, this will ask you a series of questions about your experiment, and set up a default monitoring page for you. The defaults include:
+You can then type 
 
-+ Queue status of the supercomputer
-+ Average walltime, queuing time, efficiency, and optimal and actual throughout
-+ simulation progress, with an estimated completion time
-+ A timeline of the last 10 runs, showing when they were run and when they were in the queue. 
+.. code-block:: console
 
-Furthermore, depending on the model setup you specified, you get timeseries and climatology maps of:
+    $ esm_viz configure
 
-+ Atmosphere:
-    - Near Surface Temperature
-    - Total Precipitation 
-    - Total Evaporation
-    - Net P-E
-    - Sea-level Pressure
-+ Ocean
-    - Sea surface temperature 
-    - Sea surface salinity
-    - Surface velocity
-    - AMOC strength index
+This will ask open up a configuration file for you to edit.
+
+Usage Demonstration
+-------------------
+
+Interactively setting up a new monitoring job:
+
+.. code-block:: console
     
-Currently, the following components are supported:
-+ ECHAM6 (``AWICM 1/2``)
+    $ esm_viz
+    
+Setting up a monitoring job from a YAML file:
 
-Still to come:
-+ FESOM
-+ PISM
-+ ECHAM6 (``MPI-ESM``)
-+ MPIOM (``MPI-ESM``)
-+ ECHAM5 (``COSMOS``)
-+ MPIOM (``COSMOS``)
+.. code-block:: console
 
-By default, the monitoring page will update every 2 hours. 
+    $ esm_viz </PATH/TO/EXPERIMENT.yaml>
+
+Setting up a monitoring job from a YAML file already stored in ``${HOME}/.config/monitoring``
+
+.. code-block:: console
+    
+    $ esm_viz EXPERIMENT
+    
+.. note::
+    The ``.yaml`` extension is appended automatically!
+    
+Performing only certain parts of a job:
+
+.. code-block:: console
+    
+    $ # Only schedule a job to run every 2 hours:
+    $ esm_viz schedule EXPERIMENT
+    $ # Schedule a job to run every 6 hours:
+    $ esm_viz schedule --frequency 6 EXPERIMENT
+    $ # Deploying monitoring scripts and running them on the supercomputer
+    $ # Note that the scripts actually run depend on the configuration file
+    $ esm_viz deploy EXPERIMENT
+    $ # Combining results into a webpage
+    $ esm_viz combine EXPERIMENT
+
+
+In the next section, the command line interface and python modules are explained in more detail. Then, we show an explanation about how to customize what is shown in the plots.   
+- - - -
