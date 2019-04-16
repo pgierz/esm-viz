@@ -255,15 +255,18 @@ class Simulation_Monitor(object):
                     'echam',
                     '/home/csys/pgierz/example_script.sh'
                     )
+            The analysis script will be copied to: /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
             Copying: 
                 /home/csys/pgierz/example_script 
             to 
                 pgierz@ollie1.awi.de:/work/ollie/pgierz/AWICM/PI/analysis/echam/     
-        
             Ensuring script is executable...
                 chmod 755 /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
-            
             Done!
+            
+        .. note::
+            
+            The copying is only performed if the script is not already there!
         
         Parameters:
         -----------
@@ -281,7 +284,7 @@ class Simulation_Monitor(object):
                 mkdir_p(sftp, remote_analysis_script_directory)
             if not rexists(sftp, remote_script):
                 logging.info(
-                        "Copying \n\t%s \nto \n\t%s\n",
+                        "Copying \n\t%s \nto \n\t%s",
                         os.path.basename(analysis_script),
                         remote_analysis_script_directory
                         )
@@ -289,8 +292,9 @@ class Simulation_Monitor(object):
                         analysis_script,
                         remote_script
                         )
+            # TODO: A check here if the script is already executable
             logging.info("Ensuring script is executable...")
-            logging.info("\t chmod 755 %s\n", remote_script)
+            logging.info("\t chmod 755 %s", remote_script)
             sftp.chmod(remote_script, 0o755)
             logging.debug(sftp.stat(remote_script))
         self.ssh.close()
