@@ -124,9 +124,11 @@ class Simulation_Monitor(object):
             The machine name you will connect to
         basedir : str
             The base directory of the experiment you will monitory
-        coupling : str or boo
+        coupling : str or bool
             A string denoting which iteratively coupled setup is being
             monitored, or False
+        storage_prefix : str
+            A string pointing to where results should be stored on the local computer
 
         Attributes
         ----------
@@ -234,6 +236,29 @@ class Simulation_Monitor(object):
         """
         Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
         
+        Example:
+        --------
+        Let's assume you've initialized a ``Simulation_Monitor`` object like this:
+        
+        >>> monitor = Simulation_Monitor(user='pgierz', host='ollie1.awi.de',
+                                         basedir='/work/ollie/pgierz/AWICM/PI',
+                                         coupling=False,
+                                         storage_prefix='/scratch/work/pgierz')
+        
+        Given a ``component``, e.g. ``echam``, and an ``analysis_script``, e.g. 
+        ``/home/csys/pgierz/example_script.sh``, this method would do the following:
+        
+        >>> monitor.copy_analysis_script_for_component('echam', '/home/csys/pgierz/example_script.sh')
+        Copying: 
+            /home/csys/pgierz/example_script 
+        to 
+            pgierz@ollie1.awi.de:/work/ollie/pgierz/AWICM/PI/analysis/echam/
+            
+        Ensuring script is executable...
+            chmod 755 /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
+            
+        Done!
+        
         Parameters:
         -----------
         component : str
@@ -250,7 +275,7 @@ class Simulation_Monitor(object):
                 mkdir_p(sftp, remote_analysis_script_directory)
             if not rexists(sftp, remote_script):
                 logging.info(
-                        "Copying %s to %s",
+                        "Copying \n\t%s \nto \n\t%s\n",
                         os.path.basename(analysis_script),
                         remote_analysis_script_directory
                         )
@@ -259,9 +284,11 @@ class Simulation_Monitor(object):
                         remote_script
                         )
             logging.info("Ensuring script is executable...")
+            logging.info("\t chmod 755 %s\n", remote_script)
             sftp.chmod(remote_script, 0o755)
             logging.debug(sftp.stat(remote_script))
         self.ssh.close()
+        logging.info("Done!")
 
     def run_analysis_script_for_component(self, component, analysis_script, args=[]):
         """
