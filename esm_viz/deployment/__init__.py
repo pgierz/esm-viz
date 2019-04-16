@@ -48,14 +48,14 @@ def rexists(sftp, path):
     
     Parameters
     ----------
-    sftp : `paramiko.sftp_client.SFTPClient`
+    sftp : :class:`paramiko.sftp_client.SFTPClient`
         The SFTP connection to use
-    path: `str`
+    path: :class:`str`
         The remote filesystem path that should be checked
         
     Returns
     -------
-    bool :
+    :class:`bool` :
         ``True`` if the remote path exists; ``False`` otherwise.
     """
     try:
@@ -73,9 +73,9 @@ def mkdir_p(sftp, remote_directory):
     
     Parameters
     ----------
-    sftp : `paramiko.sftp_client.SFTPClient`
+    sftp : :class:`paramiko.sftp_client.SFTPClient`
         The Paramiko SFTP connection to use
-    remote_directory : `str`
+    remote_directory : :class:`str`
         The remote directory to create
         
     Returns
@@ -118,31 +118,31 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        user : `str`
+        user : :class:`str`
             The username you will use to connect to the computing host
-        host : `str`
+        host : :class:`str`
             The machine name you will connect to
-        basedir : `str`
+        basedir : :class:`str`
             The base directory of the experiment you will monitory
-        coupling : `str` or `bool`
+        coupling : :class:`str` or :class:`bool`
             A string denoting which iteratively coupled setup is being
             monitored, or ``False``
-        storage_prefix : `str`
+        storage_prefix : :class:`str`
             A string pointing to where results should be stored on the local computer
 
         Attributes
         ----------
-        basedir : `str`
+        basedir : :class:`str`
             The directory where the experiment is running. Should point to the
             top of the experiment
-        host : `str`
+        host : :class:`str`
             The compute host
-        user : `str`
+        user : :class:`str`
             The username
-        ssh : `paramiko.client.SSHClient`
+        ssh : :class:`paramiko.client.SSHClient`
             A ssh client which you can use to connect to the host (maybe this
             should be automatically connected)
-        storagedir : `str`
+        storagedir : :class:`str`
             The location where analyzed data should be stored on this computer
             after copying
         """
@@ -169,7 +169,7 @@ class Simulation_Monitor(object):
 
         Returns
         -------
-        bool
+        :class:`bool` :
             ``True`` if you can log in to the instance's ``host`` without a
             password. Otherwise, ``False``.
         """
@@ -191,12 +191,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : `str`
+        component : :class:`str`
             The component to look for in ``self.coupling_setup``
 
         Returns
         -------
-        setup : `str`
+        setup : :class:`str`
             The setup for ``component``
         """
         logging.info("Determing what model %s belongs to", component)
@@ -217,12 +217,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : `str`
+        component : :class:`str`
             The component to look for
 
         Returns
         -------
-        remote_analysis_dir : `str`
+        remote_analysis_dir : :class:`str`
             The location of the remote analysis directory
         """
         if self.coupling_setup:
@@ -270,9 +270,9 @@ class Simulation_Monitor(object):
         
         Parameters:
         -----------
-        component : `str`
+        component : :class:`str`
             The component that will be automatically monitored
-        analysis_script : `str`
+        analysis_script : :class:`str`
             The script that will automatically analyze this component
         """
         self.ssh.connect(self.host, username=self.user)
@@ -306,11 +306,11 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : `str`
+        component : :class:`str`
             Which component to run scripts for
-        analysis_script : `str`
+        analysis_script : :class:`str`
             Which script to run
-        args : `list`
+        args : :class:`list`
             A list of strings for the arguments. If the arguments need flags,
             they should get ``'-<FLAG NAME>'`` as one of the strings. The default
             is to assume no arguments are needed.
@@ -341,15 +341,15 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : `str`
+        component : :class:`str`
             The component to be copied from
-        variable : `str`
+        variable : :class:`str`
             The variable name to look for
-        tag : `str`
+        tag : :class:`str`
             A unique tag to label the data. The remote file uses this to built
             it's filename. The default construction of the remote filename
             looks like this: ``${EXP_ID}_${component}_${variable}_${tag}.nc``
-        copy_running_means : `bool`
+        copy_running_means : :class:`bool`
             Default is True. If set; a second file is also copied with
             ``_runmean30.nc`` at the end.
         """
