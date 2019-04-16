@@ -8,19 +8,22 @@ This portion of the package contains the following pieces:
       the other computer and running them
     + Some helper function do deal with paramiko remote paths easily.
 
-..note :
+.. note::
 
      ESM-style directory structures are assumed.
      
 The following functions are defined here:
 
-+ ``rexists`` : a remote path exists check
-+ ``mkdir_p`` : a remote version of recursive directory creation
+``rexists``
+    A remote path exists check
+    
+``mkdir_p``
+    A remote version of recursive directory creation
 
 The following classes are defined here:
 
-+ ``Simulation_Monitor`` : an object to deploy, run, and copy results on a supercomputer.
-
+``Simulation_Monitor``
+    An object to deploy, run, and copy results on a supercomputer.
 
 """
 import logging
@@ -95,21 +98,23 @@ class Simulation_Monitor(object):
     """
     ``Simulation_Monitor`` can deploy and run simulation monitoring scripts.
 
-    The golden idea here is to automatically deploy certain scripts to a
+    The idea here is to automatically deploy certain scripts to a
     production machine, and run them with some (ideally useful) arguments. In
-    principle, we need two methods for this:
+    principle, we need three methods for this:
 
-    1. something that copies the script
-    1. something that runs the script.
-    1. something that copies the results back to this computer.
+    #. something that copies the script
+    #. something that runs the script.
+    #. something that copies the results back to this computer.
 
+    These are defined here:
+    
     Methods
     -------
-    + copy_analysis_script_for_component:
+    copy_analysis_script_for_component :
         Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
-    + run_analysis_script_for_component:
+    run_analysis_script_for_component :
         Runs an analysis script with a passed set of arguments.
-    + copy_results_from_analysis_script:
+    copy_results_from_analysis_script :
         Copies the results back from the supercomputer to here.
     """
     def __init__(self, user, host, basedir, coupling, storage_prefix):
