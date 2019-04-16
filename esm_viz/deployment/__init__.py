@@ -25,6 +25,10 @@ The following classes are defined here:
 ``Simulation_Monitor``
     An object to deploy, run, and copy results on a supercomputer.
 
+Specific documentation is shown below
+
+
+-------
 """
 import logging
 import os
@@ -107,15 +111,6 @@ class Simulation_Monitor(object):
     #. something that copies the results back to this computer.
 
     These are defined here:
-    
-    Methods
-    -------
-    copy_analysis_script_for_component :
-        Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
-    run_analysis_script_for_component :
-        Runs an analysis script with a passed set of arguments.
-    copy_results_from_analysis_script :
-        Copies the results back from the supercomputer to here.
     """
     def __init__(self, user, host, basedir, coupling, storage_prefix):
         """
@@ -237,8 +232,8 @@ class Simulation_Monitor(object):
 
     def copy_analysis_script_for_component(self, component, analysis_script):
         """
-        Copies a specific analysis script to the correct folder.
-
+        Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
+        
         Parameters:
         -----------
         component : str
