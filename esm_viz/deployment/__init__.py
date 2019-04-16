@@ -48,9 +48,9 @@ def rexists(sftp, path):
     
     Parameters
     ----------
-    sftp : :paramiko:class:`sftp_client.SFTPClient`
+    sftp : :class:`paramiko.sftp_client.SFTPClient`
         The SFTP connection to use
-    path: :python:class:`str`
+    path: :class:`str`
         The remote filesystem path that should be checked
         
     Returns
