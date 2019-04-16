@@ -48,9 +48,9 @@ def rexists(sftp, path):
     
     Parameters
     ----------
-    sftp : paramiko.ssh.sftp
+    sftp : `paramiko.sftp_client.SFTPClient`
         The SFTP connection to use
-    path: str
+    path: `str`
         The remote filesystem path that should be checked
         
     Returns
@@ -73,9 +73,9 @@ def mkdir_p(sftp, remote_directory):
     
     Parameters
     ----------
-    sftp : paramiko.sftp
+    sftp : `paramiko.sftp_client.SFTPClient`
         The Paramiko SFTP connection to use
-    remote_directory : str
+    remote_directory : `str`
         The remote directory to create
         
     Returns
@@ -103,8 +103,8 @@ class Simulation_Monitor(object):
     ``Simulation_Monitor`` can deploy and run simulation monitoring scripts.
 
     The idea here is to automatically deploy certain scripts to a
-    production machine, and run them with some (ideally useful) arguments. In
-    principle, we need three methods for this:
+    production machine, run them with some arguments, and copy the results
+    to the local machine. In principle, we need three methods for this:
 
     #. something that copies the script
     #. something that runs the script.
@@ -118,31 +118,31 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        user : str
+        user : `str`
             The username you will use to connect to the computing host
-        host : str
+        host : `str`
             The machine name you will connect to
-        basedir : str
+        basedir : `str`
             The base directory of the experiment you will monitory
-        coupling : str or bool
+        coupling : `str` or `bool`
             A string denoting which iteratively coupled setup is being
-            monitored, or False
-        storage_prefix : str
+            monitored, or ``False``
+        storage_prefix : `str`
             A string pointing to where results should be stored on the local computer
 
         Attributes
         ----------
-        basedir : str
+        basedir : `str`
             The directory where the experiment is running. Should point to the
             top of the experiment
-        host : str
+        host : `str`
             The compute host
-        user : str
+        user : `str`
             The username
-        ssh : paramiko.SSHClient
+        ssh : `paramiko.client.SSHClient`
             A ssh client which you can use to connect to the host (maybe this
             should be automatically connected)
-        storagedir : str
+        storagedir : `str`
             The location where analyzed data should be stored on this computer
             after copying
         """
@@ -191,12 +191,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : str
+        component : `str`
             The component to look for in ``self.coupling_setup``
 
         Returns
         -------
-        setup : str
+        setup : `str`
             The setup for ``component``
         """
         logging.info("Determing what model %s belongs to", component)
@@ -217,12 +217,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : str
+        component : `str`
             The component to look for
 
         Returns
         -------
-        remote_analysis_dir : str
+        remote_analysis_dir : `str`
             The location of the remote analysis directory
         """
         if self.coupling_setup:
@@ -270,9 +270,9 @@ class Simulation_Monitor(object):
         
         Parameters:
         -----------
-        component : str
+        component : `str`
             The component that will be automatically monitored
-        analysis_script : str
+        analysis_script : `str`
             The script that will automatically analyze this component
         """
         self.ssh.connect(self.host, username=self.user)
@@ -306,13 +306,13 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : str
+        component : `str`
             Which component to run scripts for
-        analysis_script : str
+        analysis_script : `str`
             Which script to run
-        args : list
+        args : `list`
             A list of strings for the arguments. If the arguments need flags,
-            they should get "-<FLAG NAME>" as one of the strings. The default
+            they should get ``'-<FLAG NAME>'`` as one of the strings. The default
             is to assume no arguments are needed.
         """
         # Ensure that analysis_script is a basename and not a full path:
@@ -341,17 +341,17 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : str
+        component : `str`
             The component to be copied from
-        variable : str
+        variable : `str`
             The variable name to look for
-        tag : str
+        tag : `str`
             A unique tag to label the data. The remote file uses this to built
             it's filename. The default construction of the remote filename
-            looks like this: EXPID_component_variable_tag.nc
-        copy_running_means : bool
+            looks like this: ``${EXP_ID}_${component}_${variable}_${tag}.nc``
+        copy_running_means : `bool`
             Default is True. If set; a second file is also copied with
-            "_runmean30.nc" at the end.
+            ``_runmean30.nc`` at the end.
         """
         fname = self.basedir.split("/")[-1]+"_"+component+"_"+variable+"_"+tag.lower().replace(" ", "_")+".nc"
         destination_dir = self.storagedir+"/analysis/"+component

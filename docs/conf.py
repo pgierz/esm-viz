@@ -38,7 +38,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.intersphi
 templates_path = ['_templates']
 
 # For intersphinx, we need to tell it where to look:
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'paramiko': ('http://docs.paramiko.org/en/2.4', None),
+                       }
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
