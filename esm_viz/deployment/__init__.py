@@ -9,19 +9,18 @@ This portion of the package contains the following pieces:
     + Some helper function do deal with paramiko remote paths easily.
 
 ..note :
-     ESM-style directory structures are assumed. Otherwise, I'm just at a loss...
 
+     ESM-style directory structures are assumed.
+     
 The following functions are defined here:
 
-+ rexists : a remote path exists check
-+ mkdir_p : a remote version of recursive directory creation
++ ``rexists`` : a remote path exists check
++ ``mkdir_p`` : a remote version of recursive directory creation
 
 The following classes are defined here:
 
-+ Simulation_Monitor : an object to deploy, run, and copy results on a supercomputer.
++ ``Simulation_Monitor`` : an object to deploy, run, and copy results on a supercomputer.
 
-
-- - - -
 
 """
 import logging
@@ -50,7 +49,7 @@ def rexists(sftp, path):
     Returns
     -------
     bool :
-        True if the remote path exists; False otherwise.
+        ``True`` if the remote path exists; ``False`` otherwise.
     """
     try:
         sftp.stat(path)
@@ -74,7 +73,7 @@ def mkdir_p(sftp, remote_directory):
         
     Returns
     -------
-        True if remote directories needed to be made
+        ``True`` if remote directories needed to be made
     """
     if remote_directory == '/':
         # absolute path so change directory to root
@@ -107,7 +106,7 @@ class Simulation_Monitor(object):
     Methods
     -------
     + copy_analysis_script_for_component:
-        Copies a specified analysis script to a folder EXPBASE/analysis/<component>
+        Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
     + run_analysis_script_for_component:
         Runs an analysis script with a passed set of arguments.
     + copy_results_from_analysis_script:
