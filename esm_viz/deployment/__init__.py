@@ -55,7 +55,7 @@ def rexists(sftp, path):
         
     Returns
     -------
-    :class:`bool` :
+    :class:`bool`
         ``True`` if the remote path exists; ``False`` otherwise.
     """
     try:
@@ -80,6 +80,7 @@ def mkdir_p(sftp, remote_directory):
         
     Returns
     -------
+    :class:`bool`
         ``True`` if remote directories needed to be made
     """
     if remote_directory == '/':
@@ -169,7 +170,7 @@ class Simulation_Monitor(object):
 
         Returns
         -------
-        :class:`bool` :
+        :class:`bool`
             ``True`` if you can log in to the instance's ``host`` without a
             password. Otherwise, ``False``.
         """
@@ -196,7 +197,7 @@ class Simulation_Monitor(object):
 
         Returns
         -------
-        setup : :class:`str`
+        :class:`str`
             The setup for ``component``
         """
         logging.info("Determing what model %s belongs to", component)
@@ -222,7 +223,7 @@ class Simulation_Monitor(object):
 
         Returns
         -------
-        remote_analysis_dir : :class:`str`
+        :class:`str`
             The location of the remote analysis directory
         """
         if self.coupling_setup:
