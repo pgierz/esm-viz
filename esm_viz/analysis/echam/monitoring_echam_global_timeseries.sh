@@ -58,11 +58,17 @@ rmlist="${ANALYSIS_DIR_ECHAM}/${FILENAME_RAW} $rmlist"
 cdo -f nc -fldmean -yearmean \
         "${ANALYSIS_DIR_ECHAM}"/"${FILENAME_RAW}" \
         "${ANALYSIS_DIR_ECHAM}"/"${FILENAME_AVG}"
+
+# NOTE: This is done on the python side; so we can remove it here. I just
+# commented it for now in case we need something like this in the future...
+#
 # Make a running mean if the file is long enough
-NUMBER_OF_YEARS=$(cdo nyear "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG}")
-if [ "${NUMBER_OF_YEARS}" -gt 30 ]; then
-        cdo -runmean,30 "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG}" "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG%.*}_runmean30.nc"
-fi
+#NUMBER_OF_YEARS=$(cdo nyear "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG}")
+#if [ "${NUMBER_OF_YEARS}" -gt 30 ]; then
+#        cdo -runmean,30 "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG}" "${ANALYSIS_DIR_ECHAM}/${FILENAME_AVG%.*}_runmean30.nc"
+#fi
 
 # Cleanup any files you might not need anymore
-rm -v "${rmlist}"
+for f in $rmlist; do
+        rm -v $f
+done

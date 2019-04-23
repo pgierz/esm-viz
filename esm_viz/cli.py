@@ -93,40 +93,42 @@ def deploy(expid, quiet):
 
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
-            if "Global Timeseries" in config[component]:
-                # In YAML, the variable vairable_container comes back as a
-                # dictionary, so we need to unpack a bit:
-                for variable in config[component]['Global Timeseries']:
-                    container = config[component]['Global Timeseries'][variable]
-                    logging.debug(container)
-                    file_pattern = container['file pattern']
-                    args = [variable, file_pattern]
-                    if 'analysis script' in container:
-                        specialized_script = container['analysis script'][0]
-                        if len(container['analysis script']) > 1:
-                            args = args + container['analysis script'][1:]
-                        if os.path.isfile(specialized_script):
-                            script_to_run = specialized_script
-                    else:
-                        script_to_run = analysis_script_path+"/"+component+"/monitoring_"+component+"_global_timeseries.sh"
-                    if not os.path.isfile(script_to_run):
-                        logging.error("The analysis script you want to copy to the computer server does not exist!")
-                        logging.error("It was %s", script_to_run)
-                        sys.exit(1)
-                    monitor.copy_analysis_script_for_component(
-                        component,
-                        script_to_run
-                        )
-                    monitor.run_analysis_script_for_component(
-                        component,
-                        script_to_run,
-                        args
-                        )
-                    monitor.copy_results_from_analysis_script(
-                        component,
-                        variable,
-                        'Global Timeseries',
-                        )
+            for monitoring_part in ['Global Timeseries', 'Global Climatology']:
+                monitoring_part_script_string = monitoring_part.replace(' ', '_').lower()
+                if monitoring_part in config[component]:
+                    # In YAML, the variable vairable_container comes back as a
+                    # dictionary, so we need to unpack a bit:
+                    for variable in config[component][monitoring_part]:
+                        container = config[component][monitoring_part][variable]
+                        logging.debug(container)
+                        file_pattern = container['file pattern']
+                        args = [variable, file_pattern]
+                        if 'analysis script' in container:
+                            specialized_script = container['analysis script'][0]
+                            if len(container['analysis script']) > 1:
+                                args = args + container['analysis script'][1:]
+                            if os.path.isfile(specialized_script):
+                                script_to_run = specialized_script
+                        else:
+                            script_to_run = analysis_script_path+'/'+component+'/monitoring_'+component+'_'+monitoring_part_script_string+'.sh'
+                        if not os.path.isfile(script_to_run):
+                            logging.error('The analysis script you want to copy to the computer server does not exist!')
+                            logging.error('It was %s', script_to_run)
+                            sys.exit(1)
+                        monitor.copy_analysis_script_for_component(
+                            component,
+                            script_to_run
+                            )
+                        monitor.run_analysis_script_for_component(
+                            component,
+                            script_to_run,
+                            args
+                            )
+                        monitor.copy_results_from_analysis_script(
+                            component,
+                            variable,
+                            monitoring_part,
+                            )
 
 @main.command()
 @click.option('--quiet', default=False, is_flag=True)

@@ -262,7 +262,7 @@ class Simulation_Monitor(object):
                 logging.info("Couldn't open %s", tag)
         self.ssh.close()
 
-    def copy_results_from_analysis_script(self, component, variable, tag, copy_running_means=True):
+    def copy_results_from_analysis_script(self, component, variable, tag):
         """
         Copies results from an analysis script back to this computer
 
@@ -276,9 +276,6 @@ class Simulation_Monitor(object):
             A unique tag to label the data. The remote file uses this to built
             it's filename. The default construction of the remote filename
             looks like this: EXPID_component_variable_tag.nc
-        copy_running_means : bool
-            Default is True. If set; a second file is also copied with
-            "_runmean30.nc" at the end.
         """
         fname = self.basedir.split("/")[-1]+"_"+component+"_"+variable+"_"+tag.lower().replace(" ", "_")+".nc"
         destination_dir = self.storagedir+"/analysis/"+component
@@ -292,7 +289,3 @@ class Simulation_Monitor(object):
             logging.info("Copying from %s to %s", rfile, lfile)
             sftp.get(rfile, lfile)
         self.ssh.close()
-        if copy_running_means:
-            send_tag = tag + "_runmean30"
-            # NOTE: Set this to copy_running_means to False to avoid endless recursion...
-            self.copy_results_from_analysis_script(component, variable, send_tag, copy_running_means=False)

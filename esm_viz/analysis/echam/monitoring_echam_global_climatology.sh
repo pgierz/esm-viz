@@ -66,8 +66,10 @@ cdo -f nc -yearmean \
         tmp
 rmlist="tmp $rmlist"
 cdo -f nc -timmean -seltimestep,-30/-1 \
-        tmp
+        tmp \
         "${ANALYSIS_DIR_ECHAM}"/"${FILENAME_AVG}"
 
 # Cleanup any files you might not need anymore
-rm -v "${rmlist}"
+for f in $rmlist; do
+        rm -v $f
+done

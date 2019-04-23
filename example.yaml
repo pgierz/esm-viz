@@ -36,9 +36,9 @@ echam:
                                 # Here; anything may be included that would be able to be passed to ax.plot
                                 linewidth: 1 
                                 color: 'black'
-        Climatology Maps:
-                - temp2
-                - aprt
+        Global Climatology:
+                temp2:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
 fesom:
         Special Timeseries:
                 - AMOC
