@@ -1,1 +1,82 @@
 .. include:: ../README.rst
+
+``ESM Viz`` is a command line tool to schedule automatic monitoring of earth system model simulation. 
+
+First Steps
+-----------
+
+The easiest way to get started is:
+
+.. code-block:: console
+
+    $ esm_viz
+
+You will be asked a series of questions; and when you visit the URL that pops up at the end; your good to go!
+
+Installation
+------------
+
+For AWI Users
+^^^^^^^^^^^^^
+
+On ``paleosrv1.awi.de``; the software is already installed. 
+
+
+For Other Users
+^^^^^^^^^^^^^^^
+
+There are several external packages that need to be installed in order for everything to work correctly. The easiest way to get everything in one go is:
+
+.. code-block:: console
+
+    $ pip install esm_viz
+    
+You can then type 
+
+.. code-block:: console
+
+    $ esm_viz configure
+
+This will ask open up a configuration file for you to edit.
+
+Usage Demonstration
+-------------------
+
+Interactively setting up a new monitoring job:
+
+.. code-block:: console
+    
+    $ esm_viz
+    
+Setting up a monitoring job from a YAML file:
+
+.. code-block:: console
+
+    $ esm_viz </PATH/TO/EXPERIMENT.yaml>
+
+Setting up a monitoring job from a YAML file already stored in ``${HOME}/.config/monitoring``
+
+.. code-block:: console
+    
+    $ esm_viz EXPERIMENT
+    
+.. note::
+    The ``.yaml`` extension is appended automatically!
+    
+Performing only certain parts of a job:
+
+.. code-block:: console
+    
+    $ # Only schedule a job to run every 2 hours:
+    $ esm_viz schedule EXPERIMENT
+    $ # Schedule a job to run every 6 hours:
+    $ esm_viz schedule --frequency 6 EXPERIMENT
+    $ # Deploying monitoring scripts and running them on the supercomputer
+    $ # Note that the scripts actually run depend on the configuration file
+    $ esm_viz deploy EXPERIMENT
+    $ # Combining results into a webpage
+    $ esm_viz combine EXPERIMENT
+
+
+In the next section, the command line interface and python modules are explained in more detail. Then, we show an explanation about how to customize what is shown in the plots.   
+- - - -

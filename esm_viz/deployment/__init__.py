@@ -1,20 +1,34 @@
 #!/bin/python
 """
-This package reads a "namelist", since Chris really, really wanted one. It then
-deploys a series of analysis scripts to a remote host, and combines several
-jupyter notebooks together to achieve a monitoring system for any
-particular experiment.
+The deployment submodule contain functionality to log in to a remote supercomputer, run analysis jobs, and copy back the results.
 
 This portion of the package contains the following pieces:
-    + reading the configuration yaml file to determine what is being monitored
+
     + a class to contain deployment infrastructure; copying analysis scripts to
       the other computer and running them
+    + Some helper function do deal with paramiko remote paths easily.
 
-Note: ESM-style directory structures are assumed. Otherwise, I'm just at a
-loss...
+.. note::
 
-Dr. Paul Gierz
-March 2019
+     ESM-style directory structures are assumed.
+     
+The following functions are defined here:
+
+``rexists``
+    A remote path exists check
+    
+``mkdir_p``
+    A remote version of recursive directory creation
+
+The following classes are defined here:
+
+``Simulation_Monitor``
+    An object to deploy, run, and copy results on a supercomputer.
+
+Specific documentation is shown below
+
+
+-------
 """
 import logging
 import os
@@ -29,7 +43,21 @@ __version__ = "0.1.0"
 
 
 def rexists(sftp, path):
-    """os.path.exists for paramiko's SCP object"""
+    """
+    os.path.exists for paramiko's SCP object
+    
+    Parameters
+    ----------
+    sftp : :class:`paramiko.sftp_client.SFTPClient`
+        The SFTP connection to use
+    path: :class:`str`
+        The remote filesystem path that should be checked
+        
+    Returns
+    -------
+    :class:`bool`
+        ``True`` if the remote path exists; ``False`` otherwise.
+    """
     try:
         sftp.stat(path)
         return True
@@ -37,8 +65,24 @@ def rexists(sftp, path):
         return False
 
 def mkdir_p(sftp, remote_directory):
-    """Change to this directory, recursively making new folders if needed.
-    Returns True if any folders were created."""
+    """
+    Change to this directory, recursively making new folders if needed.
+    Returns True if any folders were created.
+    
+    This uses recursion. We split up the directory 
+    
+    Parameters
+    ----------
+    sftp : :class:`paramiko.sftp_client.SFTPClient`
+        The Paramiko SFTP connection to use
+    remote_directory : :class:`str`
+        The remote directory to create
+        
+    Returns
+    -------
+    :class:`bool`
+        ``True`` if remote directories needed to be made
+    """
     if remote_directory == '/':
         # absolute path so change directory to root
         sftp.chdir('/')
@@ -59,22 +103,15 @@ class Simulation_Monitor(object):
     """
     ``Simulation_Monitor`` can deploy and run simulation monitoring scripts.
 
-    The golden idea here is to automatically deploy certain scripts to a
-    production machine, and run them with some (ideally useful) arguments. In
-    principle, we need two methods for this:
+    The idea here is to automatically deploy certain scripts to a
+    production machine, run them with some arguments, and copy the results
+    to the local machine. In principle, we need three methods for this:
 
-    1. something that copies the script
-    1. something that runs the script.
-    1. something that copies the results back to this computer.
+    #. something that copies the script
+    #. something that runs the script.
+    #. something that copies the results back to this computer.
 
-    Methods
-    -------
-    + copy_analysis_script_for_component:
-        Copies a specified analysis script to a folder EXPBASE/analysis/<component>
-    + run_analysis_script_for_component:
-        Runs an analysis script with a passed set of arguments.
-    + copy_results_from_analysis_script:
-        Copies the results back from the supercomputer to here.
+    These are defined here:
     """
     def __init__(self, user, host, basedir, coupling, storage_prefix):
         """
@@ -82,29 +119,31 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        user : str
+        user : :class:`str`
             The username you will use to connect to the computing host
-        host : str
+        host : :class:`str`
             The machine name you will connect to
-        basedir : str
+        basedir : :class:`str`
             The base directory of the experiment you will monitory
-        coupling : str or boo
+        coupling : :class:`str` or :class:`bool`
             A string denoting which iteratively coupled setup is being
-            monitored, or False
+            monitored, or ``False``
+        storage_prefix : :class:`str`
+            A string pointing to where results should be stored on the local computer
 
         Attributes
         ----------
-        basedir : str
+        basedir : :class:`str`
             The directory where the experiment is running. Should point to the
             top of the experiment
-        host : str
+        host : :class:`str`
             The compute host
-        user : str
+        user : :class:`str`
             The username
-        ssh : paramiko.SSHClient
+        ssh : :class:`paramiko.client.SSHClient`
             A ssh client which you can use to connect to the host (maybe this
             should be automatically connected)
-        storagedir : str
+        storagedir : :class:`str`
             The location where analyzed data should be stored on this computer
             after copying
         """
@@ -131,7 +170,7 @@ class Simulation_Monitor(object):
 
         Returns
         -------
-        bool
+        :class:`bool`
             ``True`` if you can log in to the instance's ``host`` without a
             password. Otherwise, ``False``.
         """
@@ -153,12 +192,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : str
+        component : :class:`str`
             The component to look for in ``self.coupling_setup``
 
         Returns
         -------
-        setup : str
+        :class:`str`
             The setup for ``component``
         """
         logging.info("Determing what model %s belongs to", component)
@@ -179,12 +218,12 @@ class Simulation_Monitor(object):
 
         Parameters
         ----------
-        component : str
+        component : :class:`str`
             The component to look for
 
         Returns
         -------
-        remote_analysis_dir : str
+        :class:`str`
             The location of the remote analysis directory
         """
         if self.coupling_setup:
@@ -196,13 +235,45 @@ class Simulation_Monitor(object):
 
     def copy_analysis_script_for_component(self, component, analysis_script):
         """
-        Copies a specific analysis script to the correct folder.
-
+        Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
+        
+        Example:
+        --------
+            Let's assume you've initialized a ``Simulation_Monitor`` object like this:
+        
+            >>> monitor = Simulation_Monitor(
+                    user='pgierz',
+                    host='ollie1.awi.de',
+                    basedir='/work/ollie/pgierz/AWICM/PI',
+                    coupling=False,
+                    storage_prefix='/scratch/work/pgierz'
+                    )
+        
+            Given a ``component``, e.g. ``echam``, and an ``analysis_script``, e.g. 
+            ``/home/csys/pgierz/example_script.sh``, this method would do the following:
+        
+            >>> monitor.copy_analysis_script_for_component(
+                    'echam',
+                    '/home/csys/pgierz/example_script.sh'
+                    )
+            The analysis script will be copied to: /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
+            Copying: 
+                /home/csys/pgierz/example_script 
+            to 
+                pgierz@ollie1.awi.de:/work/ollie/pgierz/AWICM/PI/analysis/echam/     
+            Ensuring script is executable...
+                chmod 755 /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
+            Done!
+            
+        .. note::
+            
+            The copying is only performed if the script is not already there!
+        
         Parameters:
         -----------
-        component : str
+        component : :class:`str`
             The component that will be automatically monitored
-        analysis_script : str
+        analysis_script : :class:`str`
             The script that will automatically analyze this component
         """
         self.ssh.connect(self.host, username=self.user)
@@ -214,7 +285,7 @@ class Simulation_Monitor(object):
                 mkdir_p(sftp, remote_analysis_script_directory)
             if not rexists(sftp, remote_script):
                 logging.info(
-                        "Copying %s to %s",
+                        "Copying \n\t%s \nto \n\t%s",
                         os.path.basename(analysis_script),
                         remote_analysis_script_directory
                         )
@@ -222,10 +293,13 @@ class Simulation_Monitor(object):
                         analysis_script,
                         remote_script
                         )
+            # TODO: A check here if the script is already executable
             logging.info("Ensuring script is executable...")
+            logging.info("\t chmod 755 %s", remote_script)
             sftp.chmod(remote_script, 0o755)
             logging.debug(sftp.stat(remote_script))
         self.ssh.close()
+        logging.info("Done!")
 
     def run_analysis_script_for_component(self, component, analysis_script, args=[]):
         """
@@ -233,13 +307,13 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : str
+        component : :class:`str`
             Which component to run scripts for
-        analysis_script : str
+        analysis_script : :class:`str`
             Which script to run
-        args : list
+        args : :class:`list`
             A list of strings for the arguments. If the arguments need flags,
-            they should get "-<FLAG NAME>" as one of the strings. The default
+            they should get ``'-<FLAG NAME>'`` as one of the strings. The default
             is to assume no arguments are needed.
         """
         # Ensure that analysis_script is a basename and not a full path:
@@ -268,14 +342,14 @@ class Simulation_Monitor(object):
 
         Parameters:
         -----------
-        component : str
+        component : :class:`str`
             The component to be copied from
-        variable : str
+        variable : :class:`str`
             The variable name to look for
-        tag : str
+        tag : :class:`str`
             A unique tag to label the data. The remote file uses this to built
             it's filename. The default construction of the remote filename
-            looks like this: EXPID_component_variable_tag.nc
+            looks like this: ``${EXP_ID}_${component}_${variable}_${tag}.nc``
         """
         fname = self.basedir.split("/")[-1]+"_"+component+"_"+variable+"_"+tag.lower().replace(" ", "_")+".nc"
         destination_dir = self.storagedir+"/analysis/"+component
