@@ -150,8 +150,9 @@ def combine(expid, quiet):
             notebooks_to_merge.append(viz_path+'general_'+monitoring_element.lower().replace(" ", "_")+".ipynb")
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
-            if "Global Timeseries" in config[component]:
-                notebooks_to_merge.append(viz_path+component+"_global_timeseries.ipynb")
+            for monitoring_part in ['Global Timeseries', 'Global Climatology']:
+                if monitoring_part in config[component]:
+                    notebooks_to_merge.append(viz_path+component+'_'+monitoring_part.replace(' ', '_').lower()+'.ipynb')
     print(notebooks_to_merge)
     with open(expid+".ipynb", "w") as notebook_merged:
         notebook_merged.write(merge_notebooks(notebooks_to_merge))
