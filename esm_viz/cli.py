@@ -26,7 +26,6 @@ module_path = os.path.dirname(inspect.getfile(esm_viz))
 @click.option("--frequency", default=2, help="How often to run monitoring for this experiment (Default is every 2 hours)")
 @click.option('--quiet', default=False, is_flag=True)
 def main(ctx, expid, frequency, quiet):
-    print(ctx, expid, frequency, quiet)
     if ctx.invoked_subcommand is None:
         click.echo("Scheduling...")
         ctx.invoke(schedule, expid=expid, frequency=frequency)
@@ -51,9 +50,10 @@ def schedule(expid, frequency):
     """
     cron = CronTab(user=True)
     job = cron.new(
-            command='/scratch/work/pgierz/anaconda3/bin/esm_viz deploy '+expid+'; /scratch/work/pgierz/anaconda3/bin/esm_viz combine '+expid,
+            command='source activate pyviz; /scratch/work/pgierz/anaconda3/bin/esm_viz deploy --expid '+expid+' && /scratch/work/pgierz/anaconda3/bin/esm_viz combine --expid '+expid,
             comment='Monitoring for '+expid)
-    job.hour.every(frequency)
+    job.env['PATH'] = "/scratch/work/pgierz/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    job.every(frequency).hours()
     if job.is_valid():
         job.enable()
         cron.write()
@@ -86,7 +86,8 @@ def deploy(expid, quiet):
         config.get('host'),
         config.get('basedir'),
         config.get("coupling", False),
-        config.get('storagedir')
+        config.get('storagedir'),
+        config.get('required_modules', ['anaconda3', 'cdo'])
         )
 
     analysis_script_path = module_path+"/analysis"
@@ -129,6 +130,23 @@ def deploy(expid, quiet):
                             variable,
                             monitoring_part,
                             )
+            for monitoring_part in ['Special Timeseries']:
+                if monitoring_part in config[component]:
+                    for special_timeseries in config[component][monitoring_part]:
+                        # Did the user give a full path?
+                        if 'script' in special_timeseries:
+                            if os.path.isfile(special_timeseries.get('script')):
+                                special_timeseries_script = special_timeseries.get('script')
+                        else: # we assume its in the analysis/component directory
+                            special_timeseries_script = analysis_script_path+"/"+component+"/monitoring_"+component+"_"+monitoring_part.replace(" ", "_").lower()+".py"
+                        # Did we get args?
+                        if 'args' in special_timeseries:
+                            special_timeseries_args = special_timeseries.get('args')
+                        else:
+                            special_timeseries_args = []
+                        monitor.copy_analysis_script_for_component(component, special_timeseries_script)
+                        monitor.run_analysis_script_for_component(component, special_timeseries_script, special_timeseries_args)
+
 
 @main.command()
 @click.option('--quiet', default=False, is_flag=True)
@@ -153,6 +171,10 @@ def combine(expid, quiet):
             for monitoring_part in ['Global Timeseries', 'Global Climatology']:
                 if monitoring_part in config[component]:
                     notebooks_to_merge.append(viz_path+component+'_'+monitoring_part.replace(' ', '_').lower()+'.ipynb')
+    # Add chapters at the end:
+    appendix_chapters = ['last_update.ipynb']
+    for appendix_chapter in appendix_chapters:
+        notebooks_to_merge.append(viz_path+"/"+appendix_chapter)
     print(notebooks_to_merge)
     with open(expid+".ipynb", "w") as notebook_merged:
         notebook_merged.write(merge_notebooks(notebooks_to_merge))
@@ -160,7 +182,7 @@ def combine(expid, quiet):
         config_file.write(' '.join(['test_args.py', os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml"]))
     if not quiet:
         click.echo("Combined notebook; executing and converting to HTML")
-    os.system('jupyter nbconvert --execute {:s} --to html'.format(expid+".ipynb"))
+    os.system('/scratch/work/pgierz/anaconda3/envs/pyviz/bin/jupyter nbconvert --execute {:s} --to html'.format(expid+".ipynb"))
     os.rename(expid+".html", os.environ.get("HOME")+"/public_html/"+expid+".html")
     if not quiet:
         click.echo("Cleaning up...")

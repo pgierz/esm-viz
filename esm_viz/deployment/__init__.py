@@ -113,7 +113,7 @@ class Simulation_Monitor(object):
 
     These are defined here:
     """
-    def __init__(self, user, host, basedir, coupling, storage_prefix):
+    def __init__(self, user, host, basedir, coupling, storage_prefix, required_modules=[]):
         """
         Initializes a new monitoring object.
 
@@ -153,6 +153,8 @@ class Simulation_Monitor(object):
         self.coupling_setup = coupling
 
         self.storagedir = "/".join(storage_prefix.split("/") + basedir.split("/")[1+basedir.split("/").index(self.user):])
+
+        self.required_modules = required_modules
 
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
@@ -324,8 +326,12 @@ class Simulation_Monitor(object):
         self.ssh.invoke_shell()
         args = [arg.replace("$", "\$").replace("{", "\{").replace("}", "\}") for arg in args]
         logging.info("With arguments %s...", args)
-        
-        stdin, stdout, stderr = self.ssh.exec_command("bash -l -c 'cd "+remote_analysis_script_directory+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
+        if self.required_modules:
+            logging.info("Loading modules %s...", self.required_modules)
+            module_command = 'module purge; module load '+" ".join(self.required_modules)
+        else:
+            module_command = ""
+        stdin, stdout, stderr = self.ssh.exec_command("bash -l -c '"+module_command+"; cd "+remote_analysis_script_directory+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
                 get_pty=True)
         for stream, tag in zip([stdin, stdout, stderr], ["stdin", "stdout", "stderr"]):
             try:
