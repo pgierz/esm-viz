@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Note, updated version of
+# NOTE: updated version of
 # https://github.com/ipython/ipython-in-depth/blob/master/tools/nbmerge.py
 """
 usage:
@@ -35,7 +35,6 @@ def merge_notebooks(filenames):
 if __name__ == "__main__":
     notebooks = sys.argv[1:]
     if not notebooks:
-        print(__doc__, file=sys.stderr)
         sys.exit(1)
 
     print(merge_notebooks(notebooks))

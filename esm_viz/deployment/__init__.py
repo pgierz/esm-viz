@@ -256,20 +256,20 @@ class Simulation_Monitor(object):
             Let's assume you've initialized a ``Simulation_Monitor`` object like this:
         
             >>> monitor = Simulation_Monitor(
-                    user='pgierz',
-                    host='ollie1.awi.de',
-                    basedir='/work/ollie/pgierz/AWICM/PI',
-                    coupling=False,
-                    storage_prefix='/scratch/work/pgierz'
-                    )
+            ...     user='pgierz',
+            ...     host='ollie1.awi.de',
+            ...     basedir='/work/ollie/pgierz/AWICM/PI',
+            ...     coupling=False,
+            ...     storage_prefix='/scratch/work/pgierz'
+            ...     )
         
             Given a ``component``, e.g. ``echam``, and an ``analysis_script``, e.g. 
             ``/home/csys/pgierz/example_script.sh``, this method would do the following:
         
             >>> monitor.copy_analysis_script_for_component(
-                    'echam',
-                    '/home/csys/pgierz/example_script.sh'
-                    )
+            ...     'echam',
+            ...     '/home/csys/pgierz/example_script.sh'
+            ...     )
             The analysis script will be copied to: /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
             Copying: 
                 /home/csys/pgierz/example_script 

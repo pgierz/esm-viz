@@ -13,9 +13,9 @@ import click
 from crontab import CronTab
 
 import esm_viz
-from esm_viz.deployment import Simulation_Monitor
-from esm_viz.esm_viz import read_simulation_config, MODEL_COMPONENTS
-from esm_viz.visualization.nbmerge import merge_notebooks
+from deployment import Simulation_Monitor
+from esm_viz import read_simulation_config, MODEL_COMPONENTS
+from visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
@@ -33,7 +33,6 @@ module_path = os.path.dirname(inspect.getfile(esm_viz))
 )
 @click.option("--quiet", default=False, is_flag=True)
 def main(ctx, expid, frequency, quiet):
-    print(ctx, expid, frequency, quiet)
     if ctx.invoked_subcommand is None:
         click.echo("Scheduling...")
         ctx.invoke(schedule, expid=expid, frequency=frequency)
@@ -206,7 +205,7 @@ def combine(expid, quiet):
                         + monitoring_part.replace(" ", "_").lower()
                         + ".ipynb"
                     )
-    print(notebooks_to_merge)
+    logging.debug(notebooks_to_merge)
     with open(expid + ".ipynb", "w") as notebook_merged:
         notebook_merged.write(merge_notebooks(notebooks_to_merge))
     with open(".config_ipynb", "w") as config_file:
