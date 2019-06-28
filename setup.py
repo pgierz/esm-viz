@@ -54,6 +54,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/pgierz/esm_viz",
-    version="version='0.5.1'",
+    version="0.5.1",
     zip_safe=False,
 )
