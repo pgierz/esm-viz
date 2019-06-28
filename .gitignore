@@ -1,3 +1,6 @@
+# NetCDF Files shouldn't get checked in:
+*.nc
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
