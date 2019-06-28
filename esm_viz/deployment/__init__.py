@@ -1,6 +1,7 @@
 #!/bin/python
 """
-The deployment submodule contain functionality to log in to a remote supercomputer, run analysis jobs, and copy back the results.
+The deployment submodule contain functionality to log in to a remote
+supercomputer, run analysis jobs, and copy back the results.
 
 This portion of the package contains the following pieces:
 
@@ -11,22 +12,22 @@ This portion of the package contains the following pieces:
 .. note::
 
      ESM-style directory structures are assumed.
-     
-The following functions are defined here:
-
-``rexists``
-    A remote path exists check
-    
-``mkdir_p``
-    A remote version of recursive directory creation
 
 The following classes are defined here:
 
 ``Simulation_Monitor``
     An object to deploy, run, and copy results on a supercomputer.
 
-Specific documentation is shown below
+The following functions are defined here:
 
+``rexists``
+    A remote path exists check
+
+``mkdir_p``
+    A remote version of recursive directory creation
+
+
+Specific documentation is shown below
 
 -------
 """
@@ -36,23 +37,21 @@ import sys
 
 import paramiko
 
+# wat?
 from esm_viz import esm_viz
-
-__author__ = "Danek, Gierz, Stepanek"
-__version__ = "0.1.0"
 
 
 def rexists(sftp, path):
     """
     os.path.exists for paramiko's SCP object
-    
+
     Parameters
     ----------
     sftp : :class:`paramiko.sftp_client.SFTPClient`
         The SFTP connection to use
     path: :class:`str`
         The remote filesystem path that should be checked
-        
+
     Returns
     -------
     :class:`bool`
@@ -69,16 +68,16 @@ def mkdir_p(sftp, remote_directory):
     """
     Change to this directory, recursively making new folders if needed.
     Returns True if any folders were created.
-    
+
     This uses recursion. We split up the directory 
-    
+
     Parameters
     ----------
     sftp : :class:`paramiko.sftp_client.SFTPClient`
         The Paramiko SFTP connection to use
     remote_directory : :class:`str`
         The remote directory to create
-        
+
     Returns
     -------
     :class:`bool`
@@ -113,42 +112,42 @@ class Simulation_Monitor(object):
     #. something that runs the script.
     #. something that copies the results back to this computer.
 
-    These are defined here:
+    Parameters
+    ----------
+    user : :class:`str`
+        The username you will use to connect to the computing host
+    host : :class:`str`
+        The machine name you will connect to
+    basedir : :class:`str`
+        The base directory of the experiment you will monitory
+    coupling : :class:`str` or :class:`bool`
+        A string denoting which iteratively coupled setup is being
+        monitored, or ``False``
+    storage_prefix : :class:`str`
+        A string pointing to where results should be stored on the local computer
+
+    Attributes
+    ----------
+    basedir : :class:`str`
+        The directory where the experiment is running. Should point to the
+        top of the experiment
+    host : :class:`str`
+        The compute host
+    user : :class:`str`
+        The username
+    ssh : :class:`paramiko.client.SSHClient`
+        A ssh client which you can use to connect to the host (maybe this
+        should be automatically connected)
+    storagedir : :class:`str`
+        The location where analyzed data should be stored on this computer
+        after copying
     """
 
     def __init__(self, user, host, basedir, coupling, storage_prefix):
         """
         Initializes a new monitoring object.
 
-        Parameters
-        ----------
-        user : :class:`str`
-            The username you will use to connect to the computing host
-        host : :class:`str`
-            The machine name you will connect to
-        basedir : :class:`str`
-            The base directory of the experiment you will monitory
-        coupling : :class:`str` or :class:`bool`
-            A string denoting which iteratively coupled setup is being
-            monitored, or ``False``
-        storage_prefix : :class:`str`
-            A string pointing to where results should be stored on the local computer
-
-        Attributes
-        ----------
-        basedir : :class:`str`
-            The directory where the experiment is running. Should point to the
-            top of the experiment
-        host : :class:`str`
-            The compute host
-        user : :class:`str`
-            The username
-        ssh : :class:`paramiko.client.SSHClient`
-            A ssh client which you can use to connect to the host (maybe this
-            should be automatically connected)
-        storagedir : :class:`str`
-            The location where analyzed data should be stored on this computer
-            after copying
+        Class documentation is shown above.
         """
         self.basedir = basedir
         self.host = host
