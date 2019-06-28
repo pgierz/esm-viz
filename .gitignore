@@ -1,6 +1,9 @@
 # NetCDF Files shouldn't get checked in:
 *.nc
 
+# We don't want sandbox notebooks, since they are probably for developing ideas
+sandbox_notebooks/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
