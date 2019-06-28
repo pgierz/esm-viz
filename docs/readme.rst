@@ -9,9 +9,10 @@ The easiest way to get started is:
 
 .. code-block:: console
 
-    $ esm_viz
+    $ esm_viz --help
 
-You will be asked a series of questions; and when you visit the URL that pops up at the end; your good to go!
+This will display a series of options you can use. In order to set up automatic monitoring for an experiment, you can use ``esm_viz template``
+
 
 Installation
 ------------

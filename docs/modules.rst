@@ -1,12 +1,7 @@
-=============================
-Documentation for Python Code
-=============================
+esm_viz
+=======
 
-Here, we document the actual code used in parts of the ``esm_viz`` tool.
+.. toctree::
+   :maxdepth: 4
 
-
-Deployment
-==========
-
-.. automodule:: esm_viz.deployment
-   :members:
+   esm_viz

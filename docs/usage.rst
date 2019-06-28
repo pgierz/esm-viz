@@ -5,7 +5,11 @@ The basic command to use is ``esm_viz``. You can find out what is possible with:
 
 .. code-block:: console
 
-    $ esm_viz --help
+   $ esm_viz --help
+
+
+.. note
+   The following details below are simply **planned** features.
 
 Without any arguments, this will ask you a series of questions about your experiment, and set up a default monitoring page for you. The defaults include:
 
