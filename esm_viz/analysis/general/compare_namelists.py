@@ -51,21 +51,34 @@ def determine_running_location():
     """
     working_path = Path.cwd()
     dir_path = Path(os.path.dirname(os.path.realpath(__file__)))
-    esm_dirs_to_find = set([
-            "bin", "config", "forcing", "input", "log",
-            "mon", "outdata", "restart", "scripts", "work"])
+    esm_dirs_to_find = set(
+        [
+            "bin",
+            "config",
+            "forcing",
+            "input",
+            "log",
+            "mon",
+            "outdata",
+            "restart",
+            "scripts",
+            "work",
+        ]
+    )
     found_exp_base_path = False
     old_working_dir = dir_path
     while not found_exp_base_path:
         # Determine just the basenames of all directories currently being
         # checked against:
-        dirs_in_this_directory = [str(x.name) for x in working_path.iterdir() if x.is_dir()]
+        dirs_in_this_directory = [
+            str(x.name) for x in working_path.iterdir() if x.is_dir()
+        ]
         # Check if the directories we need to find are a subset of all
         # directories in the directory currently being checked:
         if esm_dirs_to_find <= set(dirs_in_this_directory):
             found_exp_base_path = True
             exp_base_path = working_path
-            return(exp_base_path, True)
+            return (exp_base_path, True)
         else:
             # We didn't find what we were looking for, go up a level and check
             # again:
@@ -99,8 +112,8 @@ def parse_arguments():
         will probably be in.
     """
     working_path, running_in_exp_dir = determine_running_location()
-    parser = argparse.ArgumentParser(description=
-            """This script compares two sets of namelists
+    parser = argparse.ArgumentParser(
+        description="""This script compares two sets of namelists
             and displays the differences, chapter by chapter. If namelists are
             logically identical and differ only in capitalization and entry
             order, this is noted. If you are running it from anywhere inside of
@@ -108,11 +121,17 @@ def parse_arguments():
             parameter. Otherwise, you must give both --source and --target.
             Order of the passed arguments does not matter.
             """
-            )
-    parser.add_argument("--source", required=not running_in_exp_dir,
-                        help="The top of the experiment where the `source` namelists should be taken from")
-    parser.add_argument("--target", required=True,
-                        help="The top of the experiment where the `target` namelists should be taken from")
+    )
+    parser.add_argument(
+        "--source",
+        required=not running_in_exp_dir,
+        help="The top of the experiment where the `source` namelists should be taken from",
+    )
+    parser.add_argument(
+        "--target",
+        required=True,
+        help="The top of the experiment where the `target` namelists should be taken from",
+    )
     args = parser.parse_args()
     if args.source:
         return (args.source + "/config/", args.target + "/config/")
@@ -141,7 +160,7 @@ def find_namelist_files(toplevel_dir):
                 continue
             if any([c.isdigit() for c in this_file]):
                 continue
-            found_namelists.append(root+"/"+this_file)
+            found_namelists.append(root + "/" + this_file)
     return found_namelists
 
 
@@ -173,9 +192,9 @@ def determine_identical_namelists(source_namelists, target_namelists):
     source_namelist_basenames = [os.path.basename(x) for x in source_namelists]
     target_namelist_basenames = [os.path.basename(x) for x in target_namelists]
 
-    identically_named_namelists, unique_source_namelists, unique_target_namelists = \
-            determine_identical_and_unique_elements(source_namelist_basenames,
-                    target_namelist_basenames)
+    identically_named_namelists, unique_source_namelists, unique_target_namelists = determine_identical_and_unique_elements(
+        source_namelist_basenames, target_namelist_basenames
+    )
     identical_namelists = []
     for namelist in identically_named_namelists:
         source_namelist_full_path = [s for s in source_namelists if namelist in s][0]
@@ -187,6 +206,7 @@ def determine_identical_namelists(source_namelists, target_namelists):
             target_namelists.remove(target_namelist_full_path)
             identical_namelists.append(namelist)
     return (identical_namelists, unique_source_namelists, unique_target_namelists)
+
 
 def determine_identical_and_unique_elements(A, B):
     """
@@ -213,9 +233,12 @@ def determine_identical_and_unique_elements(A, B):
     unique_B = list(set(B) - set(A))
     return common, unique_A, unique_B
 
+
 def determine_namelist_differences(
-        source_namelist, target_namelist,
-        bad_chapters=["set_stream", "mvstreamctl", "set_stream_element"]):
+    source_namelist,
+    target_namelist,
+    bad_chapters=["set_stream", "mvstreamctl", "set_stream_element"],
+):
     """
     Determines differences in namelists
 
@@ -239,43 +262,58 @@ def determine_namelist_differences(
         for this_nml in source_nml, target_nml:
             if chapter in this_nml:
                 del this_nml[chapter]
-    common_chapters, unique_source_chapters, unique_target_chapters = \
-            determine_identical_and_unique_elements(source_nml, target_nml)
+    common_chapters, unique_source_chapters, unique_target_chapters = determine_identical_and_unique_elements(
+        source_nml, target_nml
+    )
     namelist_diffs = ["\n", os.path.basename(source_namelist)]
-    namelist_diffs.append(80*"-")
+    namelist_diffs.append(80 * "-")
     for this_chapter in common_chapters:
-        namelist_diffs.append("&"+this_chapter)
+        namelist_diffs.append("&" + this_chapter)
         entry_diffs = []
-        common_entries, unique_source_entries, unique_target_entries = \
-            determine_identical_and_unique_elements(source_nml[this_chapter], target_nml[this_chapter])
+        common_entries, unique_source_entries, unique_target_entries = determine_identical_and_unique_elements(
+            source_nml[this_chapter], target_nml[this_chapter]
+        )
         for this_entry in common_entries:
             source_nml_value = source_nml[this_chapter][this_entry]
             target_nml_value = target_nml[this_chapter][this_entry]
             if source_nml_value != target_nml_value:
-                entry_diffs.append("\t\t Source: %s: %s" % (this_entry, source_nml_value))
-                entry_diffs.append("\t\t Target: %s: %s" % (this_entry, target_nml_value))
+                entry_diffs.append(
+                    "\t\t Source: %s: %s" % (this_entry, source_nml_value)
+                )
+                entry_diffs.append(
+                    "\t\t Target: %s: %s" % (this_entry, target_nml_value)
+                )
         if unique_source_entries:
             entry_diffs.append("\n\t\t Unique to Source:")
             for this_entry in unique_source_entries:
-                entry_diffs.append("\t\t %s: %s" % (this_entry, source_nml[this_chapter][this_entry]))
+                entry_diffs.append(
+                    "\t\t %s: %s" % (this_entry, source_nml[this_chapter][this_entry])
+                )
         if unique_target_entries:
             entry_diffs.append("\n\t\t Unique to Target:")
             for this_entry in unique_target_entries:
-                entry_diffs.append("\t\t %s: %s" % (this_entry, target_nml[this_chapter][this_entry]))
+                entry_diffs.append(
+                    "\t\t %s: %s" % (this_entry, target_nml[this_chapter][this_entry])
+                )
         if entry_diffs:
             namelist_diffs += entry_diffs
         else:
             namelist_diffs.append("\n\t\t All entries are the same!")
         namelist_diffs.append("\\")
-    for unique_chapters, nml, tag in zip([unique_source_chapters, unique_target_chapters], [source_nml, target_nml], ["Source", "Target"]):
+    for unique_chapters, nml, tag in zip(
+        [unique_source_chapters, unique_target_chapters],
+        [source_nml, target_nml],
+        ["Source", "Target"],
+    ):
         if unique_chapters:
             for chapter in unique_chapters:
-                namelist_diffs.append("\n\t\t The following chapter is unique to %s" % tag)
-                namelist_diffs.append("&"+chapter)
+                namelist_diffs.append(
+                    "\n\t\t The following chapter is unique to %s" % tag
+                )
+                namelist_diffs.append("&" + chapter)
                 for entry, value in nml[chapter].items():
                     namelist_diffs.append("\t\t %s: %s" % (entry, value))
     return namelist_diffs
-
 
 
 def main():
@@ -292,37 +330,42 @@ def main():
     source_dir, target_dir = parse_arguments()
     source_namelists = find_namelist_files(source_dir)
     target_namelists = find_namelist_files(target_dir)
-    identical_namelists, unique_source_namelists, unique_target_namelists = determine_identical_namelists(source_namelists, target_namelists)
+    identical_namelists, unique_source_namelists, unique_target_namelists = determine_identical_namelists(
+        source_namelists, target_namelists
+    )
 
-    print(80*"*")
+    print(80 * "*")
     print("Comparing namelists of:")
-    print("%s".center(40 - int((len(source_dir)/2))) % source_dir)
+    print("%s".center(40 - int((len(source_dir) / 2))) % source_dir)
     print("- and - ".center(40))
-    print("%s".center(40 - int((len(target_dir)/2))) % target_dir)
-    print("\n", 80*"*", "\n\n")
+    print("%s".center(40 - int((len(target_dir) / 2))) % target_dir)
+    print("\n", 80 * "*", "\n\n")
 
     if identical_namelists:
-        print(80*"=")
+        print(80 * "=")
         print("The following namelists are logically identical:")
         for namelist in identical_namelists:
             print("- %s" % namelist)
     if source_namelists:
-        print(80*"=")
+        print(80 * "=")
         print("These namelists are different:")
         for source_namelist, target_namelist in zip(source_namelists, target_namelists):
-            these_diffs = determine_namelist_differences(source_namelist, target_namelist)
+            these_diffs = determine_namelist_differences(
+                source_namelist, target_namelist
+            )
             for diff in these_diffs:
                 print(diff)
     if unique_source_namelists:
-        print(80*"=")
+        print(80 * "=")
         print("These namelists are unique to %s" % source_dir)
-        for namelist in unique_source_namelists: 
+        for namelist in unique_source_namelists:
             print("- %s" % namelist)
     if unique_target_namelists:
-        print(80*"=")
+        print(80 * "=")
         print("These namelists are unique to %s" % target_dir)
-        for namelist in unique_target_namelists: 
+        for namelist in unique_target_namelists:
             print("- %s" % namelist)
+
 
 if __name__ == "__main__":
     main()

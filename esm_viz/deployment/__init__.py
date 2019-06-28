@@ -39,7 +39,7 @@ import paramiko
 from esm_viz import esm_viz
 
 __author__ = "Danek, Gierz, Stepanek"
-__version__ = "0.1.0" 
+__version__ = "0.1.0"
 
 
 def rexists(sftp, path):
@@ -64,6 +64,7 @@ def rexists(sftp, path):
     except FileNotFoundError:
         return False
 
+
 def mkdir_p(sftp, remote_directory):
     """
     Change to this directory, recursively making new folders if needed.
@@ -83,21 +84,22 @@ def mkdir_p(sftp, remote_directory):
     :class:`bool`
         ``True`` if remote directories needed to be made
     """
-    if remote_directory == '/':
+    if remote_directory == "/":
         # absolute path so change directory to root
-        sftp.chdir('/')
+        sftp.chdir("/")
         return
-    if remote_directory == '':
+    if remote_directory == "":
         # top-level relative directory must exist
         return
     try:
-        sftp.chdir(remote_directory) # sub-directory exists
+        sftp.chdir(remote_directory)  # sub-directory exists
     except IOError:
-        dirname, basename = os.path.split(remote_directory.rstrip('/'))
-        mkdir_p(sftp, dirname) # make parent directories
-        sftp.mkdir(basename) # sub-directory missing, so created it
+        dirname, basename = os.path.split(remote_directory.rstrip("/"))
+        mkdir_p(sftp, dirname)  # make parent directories
+        sftp.mkdir(basename)  # sub-directory missing, so created it
         sftp.chdir(basename)
         return True
+
 
 class Simulation_Monitor(object):
     """
@@ -113,6 +115,7 @@ class Simulation_Monitor(object):
 
     These are defined here:
     """
+
     def __init__(self, user, host, basedir, coupling, storage_prefix):
         """
         Initializes a new monitoring object.
@@ -152,16 +155,29 @@ class Simulation_Monitor(object):
         self.user = user
         self.coupling_setup = coupling
 
-        self.storagedir = "/".join(storage_prefix.split("/") + basedir.split("/")[1+basedir.split("/").index(self.user):])
+        self.storagedir = "/".join(
+            storage_prefix.split("/")
+            + basedir.split("/")[1 + basedir.split("/").index(self.user) :]
+        )
 
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if not self._can_login_to_host_without_password():
-            with open(os.environ["HOME"]+"/simulation_monitoring_errors", "a") as error_file:
-                error_file.write("Hey, you should setup ssh keys for %s. Try using esm-viz/deployment/generate_automatic_ssh_key.sh" % host)
-                error_file.write("Cowardly refusing to do anything until you get your keys figured out. Goodbye.")
-                logging.error("Hey, you can't log on to this computer: %s. Set up your keys!!! See also the error message in your home folder!", self.host)
+            with open(
+                os.environ["HOME"] + "/simulation_monitoring_errors", "a"
+            ) as error_file:
+                error_file.write(
+                    "Hey, you should setup ssh keys for %s. Try using esm-viz/deployment/generate_automatic_ssh_key.sh"
+                    % host
+                )
+                error_file.write(
+                    "Cowardly refusing to do anything until you get your keys figured out. Goodbye."
+                )
+                logging.error(
+                    "Hey, you can't log on to this computer: %s. Set up your keys!!! See also the error message in your home folder!",
+                    self.host,
+                )
                 sys.exit()
 
     def _can_login_to_host_without_password(self):
@@ -207,7 +223,6 @@ class Simulation_Monitor(object):
                 logging.info("It has %s", components_in_setup)
                 if component == components_in_setup:
                     return setup
-
 
     def _determine_remote_analysis_dir(self, component):
         """
@@ -278,21 +293,24 @@ class Simulation_Monitor(object):
         """
         self.ssh.connect(self.host, username=self.user)
         with self.ssh.open_sftp() as sftp:
-            remote_analysis_script_directory = self._determine_remote_analysis_dir(component)
-            remote_script = remote_analysis_script_directory + "/" + os.path.basename(analysis_script)
+            remote_analysis_script_directory = self._determine_remote_analysis_dir(
+                component
+            )
+            remote_script = (
+                remote_analysis_script_directory
+                + "/"
+                + os.path.basename(analysis_script)
+            )
             logging.info("The analysis script will be copied to: %s", remote_script)
             if not rexists(sftp, remote_analysis_script_directory):
                 mkdir_p(sftp, remote_analysis_script_directory)
             if not rexists(sftp, remote_script):
                 logging.info(
-                        "Copying \n\t%s \nto \n\t%s",
-                        os.path.basename(analysis_script),
-                        remote_analysis_script_directory
-                        )
-                sftp.put(
-                        analysis_script,
-                        remote_script
-                        )
+                    "Copying \n\t%s \nto \n\t%s",
+                    os.path.basename(analysis_script),
+                    remote_analysis_script_directory,
+                )
+                sftp.put(analysis_script, remote_script)
             # TODO: A check here if the script is already executable
             logging.info("Ensuring script is executable...")
             logging.info("\t chmod 755 %s", remote_script)
@@ -318,15 +336,24 @@ class Simulation_Monitor(object):
         """
         # Ensure that analysis_script is a basename and not a full path:
         analysis_script = os.path.basename(analysis_script)
-        remote_analysis_script_directory = self._determine_remote_analysis_dir(component)
+        remote_analysis_script_directory = self._determine_remote_analysis_dir(
+            component
+        )
         self.ssh.connect(self.host, username=self.user)
         logging.info("Executing %s...", analysis_script)
         self.ssh.invoke_shell()
-        args = [arg.replace("$", "\$").replace("{", "\{").replace("}", "\}") for arg in args]
+        args = [
+            arg.replace("$", "\$").replace("{", "\{").replace("}", "\}") for arg in args
+        ]
         logging.info("With arguments %s...", args)
-        
-        stdin, stdout, stderr = self.ssh.exec_command("bash -l -c 'cd "+remote_analysis_script_directory+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
-                get_pty=True)
+
+        stdin, stdout, stderr = self.ssh.exec_command(
+            "bash -l -c 'cd "
+            + remote_analysis_script_directory
+            + "; "
+            + " ".join(["./" + analysis_script] + args + ["'"]),
+            get_pty=True,
+        )
         for stream, tag in zip([stdin, stdout, stderr], ["stdin", "stdout", "stderr"]):
             try:
                 logging.info(tag)
@@ -351,13 +378,24 @@ class Simulation_Monitor(object):
             it's filename. The default construction of the remote filename
             looks like this: ``${EXP_ID}_${component}_${variable}_${tag}.nc``
         """
-        fname = self.basedir.split("/")[-1]+"_"+component+"_"+variable+"_"+tag.lower().replace(" ", "_")+".nc"
-        destination_dir = self.storagedir+"/analysis/"+component
+        fname = (
+            self.basedir.split("/")[-1]
+            + "_"
+            + component
+            + "_"
+            + variable
+            + "_"
+            + tag.lower().replace(" ", "_")
+            + ".nc"
+        )
+        destination_dir = self.storagedir + "/analysis/" + component
         if not os.path.exists(destination_dir):
             os.makedirs(destination_dir)
         self.ssh.connect(self.host, username=self.user)
         with self.ssh.open_sftp() as sftp:
-            remote_analysis_script_directory = self._determine_remote_analysis_dir(component)
+            remote_analysis_script_directory = self._determine_remote_analysis_dir(
+                component
+            )
             lfile = destination_dir + "/" + fname
             rfile = remote_analysis_script_directory + "/" + fname
             logging.info("Copying from %s to %s", rfile, lfile)

@@ -3,5 +3,5 @@
 """Top-level package for esm-viz."""
 
 __author__ = """Paul Gierz"""
-__email__ = 'pgierz@awi.de'
-__version__ = '0.4.0'
+__email__ = "pgierz@awi.de"
+__version__ = "0.4.0"
