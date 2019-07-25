@@ -235,5 +235,15 @@ def template():
     )
 
 
+@main.command()
+def configure():
+    config_dir = os.environ["HOME"] + "./config/monitoring"
+    if not os.path.isdirectory(config_dir):
+        os.makedirs(config_dir)
+    if not os.path.isfile("known_supercomputers.yaml"):
+        known_computers = {}
+        # who cares...
+
+
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
