@@ -42,8 +42,9 @@ def plot_global_timeseries(config):
             o = o.redim(**redim_dict)
             if len(ds[variable]) >= 30:
                 o_runmean = ds[variable].rolling(time=30, center=True).mean().squeeze().hvplot.line(color='red')
+                units_attr = getattr(ds[variable], 'units', None)
                 o_runmean = o_runmean.redim(value = {'name': ds[variable].long_name + ": 30 year running mean",
-                                                     'unit': ds[variable].units})
+                                                     'unit': units_attr})
                 return_list.append(o * o_runmean)
             else:
                 return_list.append(o)

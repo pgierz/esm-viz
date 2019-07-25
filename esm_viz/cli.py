@@ -4,9 +4,11 @@
 
 import os
 import sys
+
 sys.path.append("..")
 import inspect
 import logging
+import time
 
 import click
 from crontab import CronTab
@@ -78,9 +80,12 @@ def deploy(expid, quiet):
     else:
         logging.basicConfig(level=logging.INFO)
 
-    config = read_simulation_config(
-        os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml"
-        )
+    if os.path.isfile(expid):
+        config = read_simulation_config(expid)
+    else:
+        config = read_simulation_config(
+            os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml"
+            )
     monitor = Simulation_Monitor(
         config.get('user'),
         config.get('host'),
@@ -99,6 +104,8 @@ def deploy(expid, quiet):
                 if monitoring_part in config[component]:
                     # In YAML, the variable vairable_container comes back as a
                     # dictionary, so we need to unpack a bit:
+                    #
+                    # FIXME: This is all very echam specific right now...
                     for variable in config[component][monitoring_part]:
                         container = config[component][monitoring_part][variable]
                         logging.debug(container)
@@ -130,6 +137,8 @@ def deploy(expid, quiet):
                             variable,
                             monitoring_part,
                             )
+                        # Sleep for 1 second to avoid timeout errors:
+                        time.sleep(1)
             for monitoring_part in ['Special Timeseries']:
                 if monitoring_part in config[component]:
                     for special_timeseries in config[component][monitoring_part]:
@@ -171,6 +180,9 @@ def combine(expid, quiet):
             for monitoring_part in ['Global Timeseries', 'Global Climatology']:
                 if monitoring_part in config[component]:
                     notebooks_to_merge.append(viz_path+component+'_'+monitoring_part.replace(' ', '_').lower()+'.ipynb')
+    if 'custom_notebooks' in config:
+        for notebook in config['custom_notebooks']:
+            notebooks_to_merge.append(notebook)
     # Add chapters at the end:
     appendix_chapters = ['last_update.ipynb']
     for appendix_chapter in appendix_chapters:

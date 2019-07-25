@@ -9,6 +9,32 @@ If you don't like reading, here's what to do:
 
 Since you don't like reading; I'll assume you know what all of that means. If not, please read on...
 
+- - - -
+
+For automatic visualization of an experiment called "something", you can do this:
+
+```shell
+$ git clone https://github.com/pgierz/esm-viz
+$ cd esm-viz
+$ pip install --user .
+$ esm_viz --version
+$ esm_viz --expid=something
+```
+
+You also need a file called `something.yaml`, which should be in your `${HOME}/.config/monitoring`
+
+Currently supported models:
++ ECHAM6
++ Custom notebooks written by the user
+
+Still to come:
++ FESOM
+
+Please feel free to help out!!
+- - - -
+
+While the concepts below still apply, the section above provides an improved example which works for the current implementation.
+
 # General concepts
 
 In the following, we refer to 3 different computers. To get a clear terminology, here is what each will be:
