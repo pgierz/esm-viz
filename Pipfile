@@ -12,6 +12,7 @@ PyYAML = "*"
 ipython = "*"
 esm-viz = {editable = true,path = "."}
 nbformat = "*"
+nbmerge = "*"
 
 [requires]
 python_version = "3.7"
