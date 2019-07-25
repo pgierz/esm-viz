@@ -3,28 +3,37 @@ This module contains a couple of things that might be needed in the "general"
 section of an experiment montioring:
 
     1. queue information
-    1. disk usage
-    1. throughput
-    1. progress bar
+    2. disk usage
+    3. throughput
+    4. progress bar
 
-Functions that display the queue status for a particular machine as a pandas dataframe.
+These do basically what they say they do, but, since we want to be explicit:
+
+1. Functions that display the queue status for a particular machine as a pandas
+   dataframe.
+2. How much space you're using
+3. How many runs per day you're getting
+4. When you'll be done.
 """
+# Python Standard Library
 import datetime
-
-import paramiko
-import pandas as pd
-
-from matplotlib.patches import Circle, Wedge, Rectangle
 import os, sys
-import matplotlib
+import re
+
+# Third-Party Packages
+from IPython.core.display import display, HTML
+from IPython.display import display_html
+# PG: Not sure if I like importing matplotlib so often, could probably be
+# simpler..
 from matplotlib import cm
 from matplotlib import pyplot as plt
-import matplotlib.dates as mdates
+from matplotlib.patches import Circle, Wedge, Rectangle
 
+import matplotlib
+import matplotlib.dates as mdates
 import numpy as np
-from IPython.display import display_html
-from IPython.core.display import display, HTML
-import re
+import pandas as pd
+import paramiko
 
 
 SLURM_QUEUE_COMMAND = (
@@ -60,7 +69,8 @@ def stripComments(code):
     return re.sub(r"(?m) *#.*\n?", "", code)
 
 
-def queue_info(config):
+
+def queue_info(username, host, verbose=True):
     """
     Gets Batch Scheduler queueing information
 
@@ -76,17 +86,18 @@ def queue_info(config):
         A DataFrame containing the queue information, or None if the queue for
         your user is empty.
     """
-    queue_check_cmd = BATCH_SYSTEMS[config["host"]]
+    queue_check_cmd = BATCH_SYSTEMS[host]
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config["host"], username=config["user"])
+    ssh.connect(host, username=username)
     _, stdout, _ = ssh.exec_command(queue_check_cmd)
     queue_status = stdout.readlines()
     # Either we have just the header, or nothing at all, so nothing is running,
     # probably.
     if len(queue_status) <= 1:
-        print("No jobs running on", config["host"])
+        if verbose:
+            print('No jobs running on', host)
         return None
     queue_status = [l.split() for l in queue_status]
     queue_df = pd.DataFrame(queue_status[1:])
@@ -377,8 +388,13 @@ def simulation_timeline(config):
     end_groups = end_of_log.groupby("Run Number")
     f, ax = plt.subplots(1, 1, dpi=150, figsize=(15, 1.5))
     for name, group in end_groups:
-        bdate = group.index[0]
-        edate = group.index[1]
+        try:
+            bdate = group.index[0]
+            edate = group.index[1]
+        except IndexError:
+            print("Sorry, couldn't make a timeline")
+            plt.close(f)
+            return
         edate, bdate = [mdates.date2num(item) for item in (edate, bdate)]
         # The color is the same as the progressbar below, use the colormeter to figure it out.
         ax.barh(

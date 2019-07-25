@@ -8,6 +8,7 @@ import sys
 sys.path.append("..")
 import inspect
 import logging
+import time
 
 import click
 from crontab import CronTab
@@ -64,13 +65,10 @@ def schedule(expid, frequency):
     """
     cron = CronTab(user=True)
     job = cron.new(
-        command="/scratch/work/pgierz/anaconda3/bin/esm_viz deploy "
-        + expid
-        + "; /scratch/work/pgierz/anaconda3/bin/esm_viz combine "
-        + expid,
-        comment="Monitoring for " + expid,
-    )
-    job.hour.every(frequency)
+            command='source activate pyviz; /scratch/work/pgierz/anaconda3/bin/esm_viz deploy --expid '+expid+' && /scratch/work/pgierz/anaconda3/bin/esm_viz combine --expid '+expid,
+            comment='Monitoring for '+expid)
+    job.env['PATH'] = "/scratch/work/pgierz/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    job.every(frequency).hours()
     if job.is_valid():
         job.enable()
         cron.write()
@@ -101,16 +99,20 @@ def deploy(expid, quiet):
     else:
         logging.basicConfig(level=logging.INFO)
 
-    config = read_simulation_config(
-        os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
-    )
+    if os.path.isfile(expid):
+        config = read_simulation_config(expid)
+    else:
+        config = read_simulation_config(
+            os.environ.get("HOME")+"/.config/monitoring/"+expid+".yaml"
+            )
     monitor = Simulation_Monitor(
         config.get("user"),
         config.get("host"),
         config.get("basedir"),
         config.get("coupling", False),
-        config.get("storagedir"),
-    )
+        config.get('storagedir'),
+        config.get('required_modules', ['anaconda3', 'cdo'])
+        )
 
     analysis_script_path = module_path + "/analysis"
 
@@ -123,6 +125,8 @@ def deploy(expid, quiet):
                 if monitoring_part in config[component]:
                     # In YAML, the variable vairable_container comes back as a
                     # dictionary, so we need to unpack a bit:
+                    #
+                    # FIXME: This is all very echam specific right now...
                     for variable in config[component][monitoring_part]:
                         container = config[component][monitoring_part][variable]
                         logging.debug(container)
@@ -158,8 +162,28 @@ def deploy(expid, quiet):
                             component, script_to_run, args
                         )
                         monitor.copy_results_from_analysis_script(
-                            component, variable, monitoring_part
-                        )
+                            component,
+                            variable,
+                            monitoring_part,
+                            )
+                        # Sleep for 1 second to avoid timeout errors:
+                        time.sleep(1)
+            for monitoring_part in ['Special Timeseries']:
+                if monitoring_part in config[component]:
+                    for special_timeseries in config[component][monitoring_part]:
+                        # Did the user give a full path?
+                        if 'script' in special_timeseries:
+                            if os.path.isfile(special_timeseries.get('script')):
+                                special_timeseries_script = special_timeseries.get('script')
+                        else: # we assume its in the analysis/component directory
+                            special_timeseries_script = analysis_script_path+"/"+component+"/monitoring_"+component+"_"+monitoring_part.replace(" ", "_").lower()+".py"
+                        # Did we get args?
+                        if 'args' in special_timeseries:
+                            special_timeseries_args = special_timeseries.get('args')
+                        else:
+                            special_timeseries_args = []
+                        monitor.copy_analysis_script_for_component(component, special_timeseries_script)
+                        monitor.run_analysis_script_for_component(component, special_timeseries_script, special_timeseries_args)
 
 
 @main.command()
@@ -198,15 +222,16 @@ def combine(expid, quiet):
         if component in config:
             for monitoring_part in ["Global Timeseries", "Global Climatology"]:
                 if monitoring_part in config[component]:
-                    notebooks_to_merge.append(
-                        viz_path
-                        + component
-                        + "_"
-                        + monitoring_part.replace(" ", "_").lower()
-                        + ".ipynb"
-                    )
-    logging.debug(notebooks_to_merge)
-    with open(expid + ".ipynb", "w") as notebook_merged:
+                    notebooks_to_merge.append(viz_path+component+'_'+monitoring_part.replace(' ', '_').lower()+'.ipynb')
+    if 'custom_notebooks' in config:
+        for notebook in config['custom_notebooks']:
+            notebooks_to_merge.append(notebook)
+    # Add chapters at the end:
+    appendix_chapters = ['last_update.ipynb']
+    for appendix_chapter in appendix_chapters:
+        notebooks_to_merge.append(viz_path+"/"+appendix_chapter)
+    print(notebooks_to_merge)
+    with open(expid+".ipynb", "w") as notebook_merged:
         notebook_merged.write(merge_notebooks(notebooks_to_merge))
     with open(".config_ipynb", "w") as config_file:
         config_file.write(
@@ -219,10 +244,8 @@ def combine(expid, quiet):
         )
     if not quiet:
         click.echo("Combined notebook; executing and converting to HTML")
-    os.system("jupyter nbconvert --execute {:s} --to html".format(expid + ".ipynb"))
-    os.rename(
-        expid + ".html", os.environ.get("HOME") + "/public_html/" + expid + ".html"
-    )
+    os.system('/scratch/work/pgierz/anaconda3/envs/pyviz/bin/jupyter nbconvert --execute {:s} --to html'.format(expid+".ipynb"))
+    os.rename(expid+".html", os.environ.get("HOME")+"/public_html/"+expid+".html")
     if not quiet:
         click.echo("Cleaning up...")
     os.remove(".config_ipynb")
