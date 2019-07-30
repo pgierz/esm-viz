@@ -1,5 +1,7 @@
 # TL;DR
 
+[![Join the chat at https://gitter.im/esm-viz/community](https://badges.gitter.im/esm-viz/community.svg)](https://gitter.im/esm-viz/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 If you don't like reading, here's what to do:
 1. Make sure you don't have ssh password requirements anywhere
 1. Write a script that minimizes your data on your compute server
