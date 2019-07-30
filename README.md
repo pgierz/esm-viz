@@ -20,6 +20,7 @@ $ git clone https://github.com/pgierz/esm-viz
 $ cd esm-viz
 $ pip install --user .
 $ esm_viz --version
+0.7.1
 $ esm_viz --expid=something
 ```
 
@@ -31,6 +32,79 @@ Currently supported models:
 
 Still to come:
 + FESOM
+
+Here is an example `YAML` file:
+```yaml
+# Configuration of the experiment details on the COMPUTATION host:
+user: a270077
+host: mistral.dkrz.de
+basedir: /work/ba0989/a270077/AWICM_PISM/LGM_011
+model: AWICM
+# Configuration of where the data for monitoring should be copied to on the
+# VISUALIZATION host. Note that this replaces everything up to your main user
+# directory on the supercomputer to keep the experiment trees looking as
+# similar as possible. In this example file this means that the monitoring
+# files will be copied from:
+#
+# /work/ba0989/a270077/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
+#
+# to
+#
+# /scratch/work/pgierz/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
+storagedir: /scratch/work/pgierz/
+
+use_hvplot: True
+# Note that for general monitoring information; the little minus signs by the list
+# of things you want is **mandatory**
+general:
+        - queue info
+        - run efficiency
+        - disk usage
+        - simulation timeline
+        - progress bar
+        - newest log
+
+echam:
+        Global Timeseries:
+                temp2:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                # Here; anything may be included that would be able to be passed to ax.plot
+                                linewidth: 1 
+                                color: 'black'
+                albedo:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                aprl:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                aprc:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+
+        Global Climatology:
+                temp2:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.thermal
+                albedo:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.ice
+                aprl:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.rain
+                aprc:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.rain
+                glac:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+
+
+
+custom_notebooks:
+        - /home/csys/pgierz/custom_monitoring/OASIS_Fields.ipynb
+```
+
 
 Please feel free to help out!!
 - - - -
