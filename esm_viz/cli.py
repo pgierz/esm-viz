@@ -15,9 +15,9 @@ import click
 from crontab import CronTab
 
 import esm_viz
-from deployment import Simulation_Monitor
-from esm_viz import read_simulation_config, MODEL_COMPONENTS
-from visualization.nbmerge import merge_notebooks
+from .deployment import Simulation_Monitor
+from .esm_viz import read_simulation_config, MODEL_COMPONENTS
+from .visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
