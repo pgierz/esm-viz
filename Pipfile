@@ -10,7 +10,7 @@ paramiko = "*"
 python-crontab = "*"
 PyYAML = "*"
 ipython = "*"
-esm-viz = {editable = true,path = "."}
+esm-viz = {path = "."}
 nbformat = "*"
 nbmerge = "*"
 

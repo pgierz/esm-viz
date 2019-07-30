@@ -141,3 +141,7 @@ Session.vim
 tags
 # Persistent undo
 [._]*.un~
+
+# Interactive test files
+sandbox_notebooks
+
