@@ -97,8 +97,8 @@ def plot_global_climatology(config):
             o = ds[variable].squeeze().hvplot.quadmesh(
                     'lon',
                     'lat',
-                    projection=ccrs.PlateCarree(), project=True, global_extent=True,
-                    width=600, height=540, cmap=user_cmap, rasterize=True, dynamic=False)  * gv.feature.coastline
+                    projection=ccrs.Robinson(), project=True, global_extent=True,
+                    width=600, height=300, cmap=user_cmap, rasterize=True, dynamic=False)  * gv.feature.coastline
             redim_dict = {variable: {'name': getattr(ds[variable], 'long_name', None), 'unit': getattr(ds[variable], 'units', None)}}
             o = o.redim(**redim_dict)
             return_list.append(o * gv.feature.coastline)
