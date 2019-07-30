@@ -36,35 +36,38 @@ import pandas as pd
 import paramiko
 
 
-SLURM_QUEUE_COMMAND = r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
+SLURM_QUEUE_COMMAND = (
+    r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
+)
 
 
 PBS_QUEUE_COMMAND = r"qstat -l"
 
 
 BATCH_SYSTEMS = {
-    'mistral.dkrz.de': SLURM_QUEUE_COMMAND,
-    'ollie0.awi.de': SLURM_QUEUE_COMMAND,
-    'ollie1.awi.de': SLURM_QUEUE_COMMAND,
-    'juwels.fz-juelich.de': SLURM_QUEUE_COMMAND,
-    'stan0.awi.de': PBS_QUEUE_COMMAND,
-    'stan1.awi.de': PBS_QUEUE_COMMAND,
-    }
+    "mistral.dkrz.de": SLURM_QUEUE_COMMAND,
+    "ollie0.awi.de": SLURM_QUEUE_COMMAND,
+    "ollie1.awi.de": SLURM_QUEUE_COMMAND,
+    "juwels.fz-juelich.de": SLURM_QUEUE_COMMAND,
+    "stan0.awi.de": PBS_QUEUE_COMMAND,
+    "stan1.awi.de": PBS_QUEUE_COMMAND,
+}
 
 
 QUOTA_COMMANDS = {
-    'mistral.dkrz.de': None,
-    'ollie0.awi.de': 'sudo quota.sh',
-    'ollie1.awi.de': 'sudo quota.sh',
-    'juwels.fz-juelich.de': None,
-    'stan0.awi.de': None,
-    'stan1.awi.de': None,
-        }
+    "mistral.dkrz.de": None,
+    "ollie0.awi.de": "sudo quota.sh",
+    "ollie1.awi.de": "sudo quota.sh",
+    "juwels.fz-juelich.de": None,
+    "stan0.awi.de": None,
+    "stan1.awi.de": None,
+}
 
 
 def stripComments(code):
     code = str(code)
-    return re.sub(r'(?m) *#.*\n?', '', code)
+    return re.sub(r"(?m) *#.*\n?", "", code)
+
 
 
 def queue_info(username, host, verbose=True):
@@ -108,7 +111,7 @@ def quota_parser_ollie(quota_output):
         used = [l.split(":")[-1].strip().split(" ") for l in quota_output]
         quota_used_TB = float(used[1][0])
         quota_available_TB = float(used[1][4])
-        return quota_used_TB * 10**12, quota_available_TB * 10**12
+        return quota_used_TB * 10 ** 12, quota_available_TB * 10 ** 12
     except:
         # Something probably changed with Malte's quota program. You get
         # nothing back, twice; the "normal" behaviour also gives you back
@@ -117,13 +120,13 @@ def quota_parser_ollie(quota_output):
 
 
 QUOTA_PARSERS = {
-    'mistral.dkrz.de': None,
-    'ollie0.awi.de': quota_parser_ollie,
-    'ollie1.awi.de': quota_parser_ollie,
-    'juwels.fz-juelich.de': None,
-    'stan0.awi.de': None,
-    'stan1.awi.de': None,
-        }
+    "mistral.dkrz.de": None,
+    "ollie0.awi.de": quota_parser_ollie,
+    "ollie1.awi.de": quota_parser_ollie,
+    "juwels.fz-juelich.de": None,
+    "stan0.awi.de": None,
+    "stan1.awi.de": None,
+}
 
 
 def disk_usage(config):
@@ -148,11 +151,13 @@ def disk_usage(config):
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config['host'], username=config['user'])
-    _, stdout, _ = ssh.exec_command('cd '+config['basedir']+';'+disk_check_command)
-    currently_used_space = float(stdout.readlines()[0].strip().replace('\t', ''))
-    if QUOTA_COMMANDS[config['host']]:
-        _, stdout, stderr = ssh.exec_command(QUOTA_COMMANDS[config['host']])
+    ssh.connect(config["host"], username=config["user"])
+    _, stdout, _ = ssh.exec_command(
+        "cd " + config["basedir"] + ";" + disk_check_command
+    )
+    currently_used_space = float(stdout.readlines()[0].strip().replace("\t", ""))
+    if QUOTA_COMMANDS[config["host"]]:
+        _, stdout, stderr = ssh.exec_command(QUOTA_COMMANDS[config["host"]])
         try:
             errors = stderr.readlines()
             # Dump module output. This is also idioitcally dangerous.
@@ -168,19 +173,19 @@ def disk_usage(config):
             return (currently_used_space, None, None)
         # Let's just hope this breaks loudly:
         quota_output = stdout.readlines()
-        return (currently_used_space,) + QUOTA_PARSERS[config['host']](quota_output)
+        return (currently_used_space,) + QUOTA_PARSERS[config["host"]](quota_output)
     return (currently_used_space, None, None)
 
 
 def bytes2human(n):
-    symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    symbols = ("K", "M", "G", "T", "P", "E", "Z", "Y")
     prefix = {}
     for i, s in enumerate(symbols):
-        prefix[s] = 1 << (i+1)*10
+        prefix[s] = 1 << (i + 1) * 10
     for s in reversed(symbols):
         if n >= prefix[s]:
             value = float(n) / prefix[s]
-            return '%.3f%s' % (value, s)
+            return "%.3f%s" % (value, s)
     return "%sB" % n
 
 
@@ -188,37 +193,42 @@ def plot_usage(exp_usage, total_usage, total_quota):
     if total_usage and total_quota:
         total_free = total_quota - total_usage
         total_not_this_exp = total_usage - exp_usage
-        f, ax = plt.subplots(1, 1, dpi=150, figsize=(2.5,2.5))
-        ax.pie([exp_usage, total_not_this_exp, total_free],
-               colors=["lightblue", "lightgray", "white"],
-               labels=["This Exp", "Other Storage", "Free"],
-               autopct='%1.1f%%', shadow=True, startangle=90,
-               explode=(0.1, 0, 0), textprops={"fontsize": 5})
+        f, ax = plt.subplots(1, 1, dpi=150, figsize=(2.5, 2.5))
+        ax.pie(
+            [exp_usage, total_not_this_exp, total_free],
+            colors=["lightblue", "lightgray", "white"],
+            labels=["This Exp", "Other Storage", "Free"],
+            autopct="%1.1f%%",
+            shadow=True,
+            startangle=90,
+            explode=(0.1, 0, 0),
+            textprops={"fontsize": 5},
+        )
     else:
         display(HTML("This experiment uses %s space" % bytes2human(exp_usage)))
 
 
 def get_log_output(config, esm_style=True):
-    exp_path = config['basedir']
-    model_name = config['model'].lower()
+    exp_path = config["basedir"]
+    model_name = config["model"].lower()
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config['host'], username=config['user'])
+    ssh.connect(config["host"], username=config["user"])
     expid = exp_path.split("/")[-1]
     if esm_style:
-        log_file = exp_path+"/scripts/"+expid+"_"+model_name+"_compute.log"
+        log_file = exp_path + "/scripts/" + expid + "_" + model_name + "_compute.log"
     else:
-        log_file = exp_path+"/scripts/"+expid+".log"
-    stdin, stdout, stderr = ssh.exec_command('cat '+ log_file)
+        log_file = exp_path + "/scripts/" + expid + ".log"
+    stdin, stdout, stderr = ssh.exec_command("cat " + log_file)
     return stdout.readlines()
 
 
 def generate_dataframe_from_esm_logfile(log):
     df = pd.DataFrame([l.split(" : ") for l in log], columns=["Date", "Message"])
-    df2 = df['Message'].str.split(expand=True)
+    df2 = df["Message"].str.split(expand=True)
     # We drop the first row since it says "Start of Experiment"
-    log_df = pd.concat([df[1:]['Date'], df2[1:]], axis=1)
+    log_df = pd.concat([df[1:]["Date"], df2[1:]], axis=1)
     log_df.columns = ["Date", "Run Number", "Exp Date", "Job ID", "Seperator", "State"]
     log_df.drop("Seperator", axis=1, inplace=True)
     log_df.set_index("Date", inplace=True)
@@ -227,12 +237,15 @@ def generate_dataframe_from_esm_logfile(log):
 
 
 def generate_dataframe_from_mpimet_logfile(log):
-    log_df = pd.read_table(log,
-                                  sep=r" :  | -" ,
-                                  skiprows=1,
-                                  infer_datetime_format=True,
-                                  names=["Date", "Message", "State"],
-                                  engine='python', index_col=0)
+    log_df = pd.read_table(
+        log,
+        sep=r" :  | -",
+        skiprows=1,
+        infer_datetime_format=True,
+        names=["Date", "Message", "State"],
+        engine="python",
+        index_col=0,
+    )
     middle_column = log_df["Message"].apply(lambda x: pd.Series(str(x).split()))
     log_df.drop("Message", axis=1, inplace=True)
     middle_column.columns = ["Run Number", "Exp Date", "Job ID"]
@@ -251,7 +264,7 @@ def compute_throughput(log_df):
     run_diffs = {"Run Number": [], "Wall Time": [], "Queue Time": []}
     for name, group in groupby:
         if int(name) > 1:
-            previous_group = groupby.get_group(str(int(name)-1))
+            previous_group = groupby.get_group(str(int(name) - 1))
             run_diffs["Queue Time"].append(group.index[0] - previous_group.index[-1])
         else:
             run_diffs["Queue Time"].append(datetime.timedelta(0))
@@ -267,29 +280,35 @@ def compute_throughput(log_df):
 # FIXME: What about coupling????
 def compute_walltime_and_throughput(config, esm_style=True):
     # NOTE: ``exp`` is actually ``basedir``
-    exp = config['basedir']
-    model = config['model'].lower() 
+    exp = config["basedir"]
+    model = config["model"].lower()
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(config['host'], username=config['user'])
-    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; grep -i \"initial_date\" *.run")
+    client.connect(config["host"], username=config["user"])
+    stdin, stdout, stderr = client.exec_command(
+        "cd " + exp + '/scripts; grep -i "initial_date" *.run'
+    )
     start_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
     # This won't work for coupled experiments:
-    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; cat *.date")
+    stdin, stdout, stderr = client.exec_command("cd " + exp + "/scripts; cat *.date")
     if esm_style:
         current_year = stdout.readlines()[0].split("=")[-1].split("-")[0]
     else:
         current_year = stdout.readlines()[0].split()[0][:4]
-    stdin, stdout, stderr = client.exec_command("cd "+exp+"/scripts; grep -i \"final_date\" *.run")
+    stdin, stdout, stderr = client.exec_command(
+        "cd " + exp + '/scripts; grep -i "final_date" *.run'
+    )
     final_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
     start_year = int(start_year)
     current_year = int(current_year) - start_year
     final_year = int(final_year) - start_year
 
     walltime, throughput, diffs = compute_effective_throughput(
-        generate_dataframe_from_mpiesm_logfile(get_log_output(exps_full[0])))
-    df = pd.DataFrame.from_dict({"Walltime": walltime,
-                       "Throughput": throughput}, orient="index")
+        generate_dataframe_from_mpiesm_logfile(get_log_output(exps_full[0]))
+    )
+    df = pd.DataFrame.from_dict(
+        {"Walltime": walltime, "Throughput": throughput}, orient="index"
+    )
     return df
 
 
@@ -297,24 +316,36 @@ def progress_bar(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
     diffs = compute_throughput(log_df)[2]
-    throughput = datetime.timedelta(1) / diffs['Wall Time'].mean()
-    exp = config['basedir']
-    model = config['model'].lower() 
+    throughput = datetime.timedelta(1) / diffs["Wall Time"].mean()
+    exp = config["basedir"]
+    model = config["model"].lower()
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(config['host'], username=config['user'])
-    date_filename = exp.split("/")[-1]+"_"+model+".date"
-    remote_command =  "cd "+config['basedir']+'/scripts/; cat '+date_filename+" |awk '{ print $1 }'"
+    client.connect(config["host"], username=config["user"])
+    date_filename = exp.split("/")[-1] + "_" + model + ".date"
+    remote_command = (
+        "cd "
+        + config["basedir"]
+        + "/scripts/; cat "
+        + date_filename
+        + " |awk '{ print $1 }'"
+    )
     stdin, stdout, stderr = client.exec_command(remote_command)
     # stdout is now something like 19500101
     # Assume that you get something like Y*YMMDD; so cut off the last 4 digits (note that we dont know how many places the year has; so we need to cut from the end)
     current_date = int(stdout.readlines()[0][:-5])
-    runscript_file = config.get('runscript', config['basedir']+'/scripts/*run')
-    # POTENTIAL BUG: These things are all very dependent on the runscript's way of defining time control. It might be better to do this somehow differently    
-    start_year = client.exec_command("grep INITIAL_DATE_"+model+" "+runscript_file)[1].readlines()[0]
-    final_year = client.exec_command("grep FINAL_DATE_"+model+" "+runscript_file)[1].readlines()[0]
+    runscript_file = config.get("runscript", config["basedir"] + "/scripts/*run")
+    # POTENTIAL BUG: These things are all very dependent on the runscript's way of defining time control. It might be better to do this somehow differently
+    start_year = client.exec_command(
+        "grep INITIAL_DATE_" + model + " " + runscript_file
+    )[1].readlines()[0]
+    final_year = client.exec_command("grep FINAL_DATE_" + model + " " + runscript_file)[
+        1
+    ].readlines()[0]
     # POTENTIAL BUG: What about people who run on monthly basis?
-    run_size = client.exec_command("grep NYEAR_"+model+" "+runscript_file)[1].readlines()[0]
+    run_size = client.exec_command("grep NYEAR_" + model + " " + runscript_file)[
+        1
+    ].readlines()[0]
     # Reformat to get just the years and run sizes
     start_year = int(start_year.split("=")[1].split("-")[0])
     final_year = int(final_year.split("=")[1].split("-")[0])
@@ -326,15 +357,26 @@ def progress_bar(config):
     years_left = final_year - current_date
     days_left = years_left / years_per_day
     finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
-    r_bar = " "+str(total_number_of_runs - current_date)+"/"+str(total_number_of_runs) +", Throughput ~"+str(np.round(years_per_day, 2))+"runs/day"
+    r_bar = (
+        " "
+        + str(total_number_of_runs - current_date)
+        + "/"
+        + str(total_number_of_runs)
+        + ", Throughput ~"
+        + str(np.round(years_per_day, 2))
+        + "runs/day"
+    )
     from tqdm import tnrange, tqdm_notebook
-    pbar = tqdm_notebook(total=total_number_of_runs, 
-                         desc="Done on: "+finishing_date.strftime("%d %b, %Y"),
-                         bar_format="{n}/|/{l_bar} "+r_bar)
+
+    pbar = tqdm_notebook(
+        total=total_number_of_runs,
+        desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
+        bar_format="{n}/|/{l_bar} " + r_bar,
+    )
     pbar.update(int(total_number_of_runs - years_left))
     pbar.close()
-    
-    
+
+
 def simulation_timeline(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
@@ -355,152 +397,197 @@ def simulation_timeline(config):
             return
         edate, bdate = [mdates.date2num(item) for item in (edate, bdate)]
         # The color is the same as the progressbar below, use the colormeter to figure it out.
-        ax.barh(0, edate - bdate, left=bdate, height=0.2, color=(217./255., 83./255., 79./255.),
-                edgecolor="black")
+        ax.barh(
+            0,
+            edate - bdate,
+            left=bdate,
+            height=0.2,
+            color=(217.0 / 255.0, 83.0 / 255.0, 79.0 / 255.0),
+            edgecolor="black",
+        )
     ax.set_ylim(-0.5, 0.5)
     for direction in ["top", "left", "right"]:
         ax.spines[direction].set_visible(False)
     ax.yaxis.set_visible(False)
     ax.xaxis_date()
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M %d.%m.%y"))
-    
-def degree_range(n): 
-    start = np.linspace(0,180,n+1, endpoint=True)[0:-1]
-    end = np.linspace(0,180,n+1, endpoint=True)[1::]
-    mid_points = start + ((end-start)/2.)
+
+
+def degree_range(n):
+    start = np.linspace(0, 180, n + 1, endpoint=True)[0:-1]
+    end = np.linspace(0, 180, n + 1, endpoint=True)[1::]
+    mid_points = start + ((end - start) / 2.0)
     return np.c_[start, end], mid_points
 
-def rot_text(ang): 
+
+def rot_text(ang):
     rotation = np.degrees(np.radians(ang) * np.pi / np.pi - np.radians(90))
     return rotation
 
-def gauge(labels=['LOW','MEDIUM','HIGH','VERY HIGH','EXTREME'], \
-          colors='jet_r', arrow=1, title='', fname=False): 
-    
+
+def gauge(
+    labels=["LOW", "MEDIUM", "HIGH", "VERY HIGH", "EXTREME"],
+    colors="jet_r",
+    arrow=1,
+    title="",
+    fname=False,
+):
+
     """
     some sanity checks first
     
     """
-    
+
     N = len(labels)
-    
-    if arrow > N: 
-        raise Exception("\n\nThe category ({}) is greated than \
-        the length\nof the labels ({})".format(arrow, N))
- 
+
+    if arrow > N:
+        raise Exception(
+            "\n\nThe category ({}) is greated than \
+        the length\nof the labels ({})".format(
+                arrow, N
+            )
+        )
 
     """
     if colors is a string, we assume it's a matplotlib colormap
     and we discretize in N discrete colors 
     """
-    
+
     if isinstance(colors, str):
         cmap = cm.get_cmap(colors, N)
         cmap = cmap(np.arange(N))
-        colors = cmap[::-1,:].tolist()
-    if isinstance(colors, list): 
+        colors = cmap[::-1, :].tolist()
+    if isinstance(colors, list):
         if len(colors) == N:
             colors = colors[::-1]
-        else: 
-            raise Exception("\n\nnumber of colors {} not equal \
-            to number of categories{}\n".format(len(colors), N))
+        else:
+            raise Exception(
+                "\n\nnumber of colors {} not equal \
+            to number of categories{}\n".format(
+                    len(colors), N
+                )
+            )
 
     """
     begins the plotting
     """
-    
+
     fig, ax = plt.subplots()
 
     ang_range, mid_points = degree_range(N)
 
     labels = labels[::-1]
-    
+
     """
     plots the sectors and the arcs
     """
     patches = []
-    for ang, c in zip(ang_range, colors): 
+    for ang, c in zip(ang_range, colors):
         # sectors
-        patches.append(Wedge((0.,0.), .4, *ang, facecolor='w', lw=2))
+        patches.append(Wedge((0.0, 0.0), 0.4, *ang, facecolor="w", lw=2))
         # arcs
-        patches.append(Wedge((0.,0.), .4, *ang, width=0.10, facecolor=c, lw=2, alpha=0.5))
-    
+        patches.append(
+            Wedge((0.0, 0.0), 0.4, *ang, width=0.10, facecolor=c, lw=2, alpha=0.5)
+        )
+
     [ax.add_patch(p) for p in patches]
 
-    
     """
     set the labels (e.g. 'LOW','MEDIUM',...)
     """
 
-    for mid, lab in zip(mid_points, labels): 
+    for mid, lab in zip(mid_points, labels):
 
-        ax.text(0.35 * np.cos(np.radians(mid)), 0.35 * np.sin(np.radians(mid)), lab, \
-            horizontalalignment='center', verticalalignment='center', fontsize=8, rotation = rot_text(mid))
+        ax.text(
+            0.35 * np.cos(np.radians(mid)),
+            0.35 * np.sin(np.radians(mid)),
+            lab,
+            horizontalalignment="center",
+            verticalalignment="center",
+            fontsize=8,
+            rotation=rot_text(mid),
+        )
 
     """
     set the bottom banner and the title
     """
-    r = Rectangle((-0.4,-0.1),0.8,0.1, facecolor='w', lw=2)
+    r = Rectangle((-0.4, -0.1), 0.8, 0.1, facecolor="w", lw=2)
     ax.add_patch(r)
-    
-    ax.text(0, -0.05, title, horizontalalignment='center', \
-         verticalalignment='center', fontsize=22, fontweight='bold')
+
+    ax.text(
+        0,
+        -0.05,
+        title,
+        horizontalalignment="center",
+        verticalalignment="center",
+        fontsize=22,
+        fontweight="bold",
+    )
 
     """
     plots the arrow now
     """
-    
+
     pos = mid_points[abs(arrow - N)]
-    
-    ax.arrow(0, 0, 0.225 * np.cos(np.radians(pos)), 0.225 * np.sin(np.radians(pos)), \
-                 width=0.04, head_width=0.09, head_length=0.1, fc='k', ec='k')
-    
-    ax.add_patch(Circle((0, 0), radius=0.02, facecolor='k'))
-    ax.add_patch(Circle((0, 0), radius=0.01, facecolor='w', zorder=11))
+
+    ax.arrow(
+        0,
+        0,
+        0.225 * np.cos(np.radians(pos)),
+        0.225 * np.sin(np.radians(pos)),
+        width=0.04,
+        head_width=0.09,
+        head_length=0.1,
+        fc="k",
+        ec="k",
+    )
+
+    ax.add_patch(Circle((0, 0), radius=0.02, facecolor="k"))
+    ax.add_patch(Circle((0, 0), radius=0.01, facecolor="w", zorder=11))
 
     """
     removes frame and ticks, and makes axis equal and tight
     """
-    
+
     ax.set_frame_on(False)
     ax.axes.set_xticks([])
     ax.axes.set_yticks([])
-    ax.axis('equal')
+    ax.axis("equal")
     plt.tight_layout()
     fig.savefig(fname, dpi=200)
     plt.close(fig)
 
 
-        
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
-        
-    
+
+
 def run_efficiency(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
     diffs = compute_throughput(log_df)[2]
-    throughput = datetime.timedelta(1) / diffs['Wall Time'].mean()
-    efficiency = diffs["Wall Time"].mean() / (diffs["Queue Time"].mean() + diffs["Wall Time"].mean())
+    throughput = datetime.timedelta(1) / diffs["Wall Time"].mean()
+    efficiency = diffs["Wall Time"].mean() / (
+        diffs["Queue Time"].mean() + diffs["Wall Time"].mean()
+    )
     levels = np.arange(0, 105, 5)
-    arrow_level = int(find_nearest(levels, 100.*efficiency) + 1.)
+    arrow_level = int(find_nearest(levels, 100.0 * efficiency) + 1.0)
     levels = ["%.0f" % number for number in levels]
-    levels = [l+"%" for l in levels]
-    figure_title = config['basedir'].split("/")[-1]+"_efficiency"
-    gauge_figure = os.environ.get("HOME")+"/public_html/"+figure_title+".png"
+    levels = [l + "%" for l in levels]
+    figure_title = config["basedir"].split("/")[-1] + "_efficiency"
+    gauge_figure = os.environ.get("HOME") + "/public_html/" + figure_title + ".png"
     if os.path.exists(gauge_figure):
         os.remove(gauge_figure)
     gauge(
         labels=levels,
-        colors='RdYlGn_r',
+        colors="RdYlGn_r",
         arrow=arrow_level,
-        title='Run Efficiency',
-        fname=gauge_figure
-        )
-    prefix = \
-"""
+        title="Run Efficiency",
+        fname=gauge_figure,
+    )
+    prefix = """
  <!DOCTYPE html>
 <html>
 <head>
@@ -528,8 +615,7 @@ def run_efficiency(config):
 <div class="row">
   <div class="column">
 """
-    suffix = \
-"""
+    suffix = """
   </div>
   <div class="column">
     <img src="pic_file.png" alt="Graph" style="width:100%">
@@ -538,12 +624,20 @@ def run_efficiency(config):
 </body>
 </html>
 """
-    df = pd.DataFrame.from_dict({
-        "Mean Walltime": diffs["Wall Time"].mean(),
-        "Mean Queuing Time": diffs["Queue Time"].mean(),
-        "Optimal Throughput": throughput,
-        "Actual Throughput": throughput*efficiency,
-        "Run Efficiency": efficiency*100
-        }, orient='index', columns=["Run Statistics"])
-    html = prefix.replace('title', figure_title)+df.to_html()+suffix.replace('pic_file.png', figure_title+".png")
+    df = pd.DataFrame.from_dict(
+        {
+            "Mean Walltime": diffs["Wall Time"].mean(),
+            "Mean Queuing Time": diffs["Queue Time"].mean(),
+            "Optimal Throughput": throughput,
+            "Actual Throughput": throughput * efficiency,
+            "Run Efficiency": efficiency * 100,
+        },
+        orient="index",
+        columns=["Run Statistics"],
+    )
+    html = (
+        prefix.replace("title", figure_title)
+        + df.to_html()
+        + suffix.replace("pic_file.png", figure_title + ".png")
+    )
     display_html(html, raw=True)

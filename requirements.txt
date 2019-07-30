@@ -1,3 +1,6 @@
+Click>=6.0
+nbformat
+nbmerge
 paramiko
 python-crontab
 pyyaml

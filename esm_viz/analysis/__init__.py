@@ -4,5 +4,3 @@ This portion of the package contains the following:
 """
 
 import paramiko
-
-
