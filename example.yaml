@@ -1,10 +1,8 @@
 # Configuration of the experiment details on the COMPUTATION host:
 user: a270077
 host: mistral.dkrz.de
-basedir: /work/ba0989/a270077/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
+basedir: /work/ba0989/a270077/AWICM_PISM/LGM_011
 model: AWICM
-coupling: awicm pism_standalone
-
 # Configuration of where the data for monitoring should be copied to on the
 # VISUALIZATION host. Note that this replaces everything up to your main user
 # directory on the supercomputer to keep the experiment trees looking as
@@ -18,6 +16,7 @@ coupling: awicm pism_standalone
 # /scratch/work/pgierz/AWICM_PISM/LGM-CTRL_ICE6G_PISM_20km_atmosphere_only
 storagedir: /scratch/work/pgierz/
 
+use_hvplot: True
 # Note that for general monitoring information; the little minus signs by the list
 # of things you want is **mandatory**
 general:
@@ -26,8 +25,8 @@ general:
         - disk usage
         - simulation timeline
         - progress bar
+        - newest log
 
-# Note that the lack of minus signs is also **mandatory**
 echam:
         Global Timeseries:
                 temp2:
@@ -36,9 +35,34 @@ echam:
                                 # Here; anything may be included that would be able to be passed to ax.plot
                                 linewidth: 1 
                                 color: 'black'
+                albedo:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                aprl:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                aprc:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+
         Global Climatology:
                 temp2:
                         file pattern: ${EXP_ID}_echam6_echam_??????.grb
-fesom:
-        Special Timeseries:
-                - AMOC
+                        plot arguments:
+                                cmap: cmocean.thermal
+                albedo:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.ice
+                aprl:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.rain
+                aprc:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+                        plot arguments:
+                                cmap: cmocean.rain
+                glac:
+                        file pattern: ${EXP_ID}_echam6_echam_??????.grb
+
+
+
+custom_notebooks:
+        - /home/csys/pgierz/custom_monitoring/OASIS_Fields.ipynb
