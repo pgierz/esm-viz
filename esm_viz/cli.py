@@ -301,6 +301,12 @@ def configure():
         known_computers = {}
         # Not yet done....
 
+@click.option(
+    "--expid", default="example", help="The experiment ID you wish to edit")
+@main.command()
+def edit(expid):
+    """Opens the YAML config for ``expid`` in your $EDITOR"""
+    click.edit(filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml")
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
