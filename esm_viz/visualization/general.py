@@ -567,7 +567,7 @@ def find_nearest(array, value):
 def run_efficiency(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
-    diffs = compute_throughput(log_df)[2]
+    diffs = compute_throughput(log_df)[2].tail(10)
     throughput = datetime.timedelta(1) / diffs["Wall Time"].mean()
     efficiency = diffs["Wall Time"].mean() / (
         diffs["Queue Time"].mean() + diffs["Wall Time"].mean()
@@ -629,8 +629,8 @@ def run_efficiency(config):
             "Mean Walltime": diffs["Wall Time"].mean(),
             "Mean Queuing Time": diffs["Queue Time"].mean(),
             "Optimal Throughput": throughput,
-            "Actual Throughput": throughput * efficiency,
-            "Run Efficiency": efficiency * 100,
+            "Actual Throughput (Last 10 Runs)": throughput * efficiency,
+            "Run Efficiency (Last 10 Runs)": efficiency * 100,
         },
         orient="index",
         columns=["Run Statistics"],
