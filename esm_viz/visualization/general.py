@@ -332,10 +332,19 @@ def progress_bar(config):
     )
     stdin, stdout, stderr = client.exec_command(remote_command)
     # stdout is now something like 19500101
-    # Assume that you get something like Y*YMMDD; so cut off the last 4 digits (note that we dont know how many places the year has; so we need to cut from the end)
+    # Assume that you get something like Y*YMMDD; so cut off the last 4 digits
+    # (note that we dont know how many places the year has; so we need to cut
+    # from the end)
     current_date = int(stdout.readlines()[0][:-5])
+
+    remote_command = ("cd " + config["basedir"] + "/scripts/; cat " + date_filename + " |awk '{ print $2 }'")
+    stdin, stdout, stderr = client.exec_command(remote_command)
+    current_run = int(stdout.readlines()[0])
+
     runscript_file = config.get("runscript", config["basedir"] + "/scripts/*run")
-    # POTENTIAL BUG: These things are all very dependent on the runscript's way of defining time control. It might be better to do this somehow differently
+    # POTENTIAL BUG: These things are all very dependent on the runscript's way
+    # of defining time control. It might be better to do this somehow
+    # differently
     start_year = client.exec_command(
         "grep INITIAL_DATE_" + model + " " + runscript_file
     )[1].readlines()[0]
@@ -359,7 +368,7 @@ def progress_bar(config):
     finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
     r_bar = (
         " "
-        + str(total_number_of_runs - current_date)
+        + str(current_run)
         + "/"
         + str(total_number_of_runs)
         + ", Throughput ~"
@@ -373,7 +382,7 @@ def progress_bar(config):
         desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
         bar_format="{n}/|/{l_bar} " + r_bar,
     )
-    pbar.update(int(total_number_of_runs - years_left))
+    pbar.update(current_run)
     pbar.close()
 
 
