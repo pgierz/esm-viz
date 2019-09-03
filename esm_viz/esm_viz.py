@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Main module."""
+import os
+import shutil
 
 import yaml
 
@@ -29,11 +31,11 @@ def read_simulation_config(config_file):
 
     if os.path.isfile(config_file):
         if not os.path.isfile(config_dir+config_file+".yaml"):
-            os.copy(config_file, config_dir+os.path.basename(config_file)+".yaml")
+            shutil.copyfile(config_file, config_dir+os.path.basename(config_file)+".yaml")
     elif os.path.isfile(config_dir+config_file+".yaml"):
         config_file = config_dir+config_file+".yaml"
 
     with open(config_file) as cfg:
-        sim_monitoring_dict = yaml.load(config_file, Loader=yaml.FullLoader)
+        sim_monitoring_dict = yaml.load(cfg, Loader=yaml.FullLoader)
 
     return sim_monitoring_dict
