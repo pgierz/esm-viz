@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Console script for esm_viz."""
@@ -15,9 +15,9 @@ import click
 from crontab import CronTab
 
 import esm_viz
-from esm_viz.deployment import Simulation_Monitor
+from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS
-from esm_viz.visualization.nbmerge import merge_notebooks
+from .visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
