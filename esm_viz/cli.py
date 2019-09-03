@@ -66,15 +66,12 @@ def schedule(expid, frequency):
     """
     cron = CronTab(user=True)
     job = cron.new(
-        command="source activate pyviz; /scratch/work/pgierz/anaconda3/bin/esm_viz deploy --expid "
+        command="esm_viz deploy --expid "
         + expid
-        + " && /scratch/work/pgierz/anaconda3/bin/esm_viz combine --expid "
+        + " && esm_viz combine --expid "
         + expid,
         comment="Monitoring for " + expid,
     )
-    job.env[
-        "PATH"
-    ] = "/scratch/work/pgierz/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     job.every(frequency).hours()
     if job.is_valid():
         job.enable()
@@ -287,13 +284,15 @@ def combine(expid, quiet):
 
 @main.command()
 def template():
-    print(
+    click.echo(
         "Hi, this is the template command. It's being built, please be patient and pet the owl."
     )
 
 
 @main.command()
 def configure():
+    click.echo("Hi, this is the configure command. It's being built, please be patient and pet the owl.")
+    return
     config_dir = os.environ["HOME"] + "./config/monitoring"
     if not os.path.isdirectory(config_dir):
         os.makedirs(config_dir)
