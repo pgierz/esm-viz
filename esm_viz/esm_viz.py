@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Main module."""
 import os
+import logging
 import shutil
 
 import yaml
@@ -14,6 +15,11 @@ MODEL_COMPONENTS = {
 
 COUPLED_SETUPS = {"awicm pism_standalone": ["awicm", "pism_standalone"]}
 
+
+def yaml_to_dict(f):
+    with open(f) as cfg:
+        config = yaml.load(cfg, Loader=yaml.FullLoader)
+    return config
 
 def read_simulation_config(config_file):
     """
@@ -29,13 +35,15 @@ def read_simulation_config(config_file):
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
 
+    print(config_file)
+    # User gave the a file, which might or might not be in the right directory at this point:
     if os.path.isfile(config_file):
-        if not os.path.isfile(config_dir+config_file+".yaml"):
-            shutil.copyfile(config_file, config_dir+os.path.basename(config_file)+".yaml")
-    elif os.path.isfile(config_dir+config_file+".yaml"):
-        config_file = config_dir+config_file+".yaml"
+        if not os.path.isfile(os.path.join(config_dir, os.path.basename(config_file))):
+            print("Copying file to config folder")
+            shutil.copyfile(config_file, config_dir+os.path.basename(config_file))
+        return yaml_to_dict(config_file)
+    elif os.path.isfile(os.path.join(config_dir, config_file)):
+        return read_simulation_config(os.path.join(config_dir, config_file))
+    else: # Not a file, probably just experiment name
+        return read_simulation_config(config_file+".yaml")
 
-    with open(config_file) as cfg:
-        sim_monitoring_dict = yaml.load(cfg, Loader=yaml.FullLoader)
-
-    return sim_monitoring_dict
