@@ -16,12 +16,9 @@ Since you don't like reading; I'll assume you know what all of that means. If no
 For automatic visualization of an experiment called "something", you can do this:
 
 ```shell
-$ git clone https://github.com/pgierz/esm-viz
-$ cd esm-viz
-$ pip install --user .
+$ pip install --user git+https://github.com/pgierz/esm-viz
 $ esm_viz --version
-0.7.1
-$ esm_viz --expid=something
+0.8.1
 ```
 
 You also need a file called `something.yaml`, which should be in your `${HOME}/.config/monitoring`
