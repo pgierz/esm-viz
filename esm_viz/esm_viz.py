@@ -19,9 +19,21 @@ def read_simulation_config(config_file):
 
     Parameters:
     -----------
-    json_file : str
+    config_file : str
         Which file to read to set up the simulation monitoring
     """
-    config_file = open(config_file, "r")
-    sim_monitoring_dict = yaml.load(config_file, Loader=yaml.FullLoader)
+    config_dir = os.environ.get("HOME") + "/.config/monitoring/"
+
+    if not os.path.isdir(config_dir):
+        os.makedirs(config_dir)
+
+    if os.path.isfile(config_file):
+        if not os.path.isfile(config_dir+config_file+".yaml"):
+            os.copy(config_file, config_dir+os.path.basename(config_file)+".yaml")
+    elif os.path.isfile(config_dir+config_file+".yaml"):
+        config_file = config_dir+config_file+".yaml"
+
+    with open(config_file) as cfg:
+        sim_monitoring_dict = yaml.load(config_file, Loader=yaml.FullLoader)
+
     return sim_monitoring_dict

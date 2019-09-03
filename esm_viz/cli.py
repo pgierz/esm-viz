@@ -98,17 +98,14 @@ def deploy(expid, quiet):
     quiet : bool
         Turn off more verbose logging
     """
+
     if quiet:
         logging.basicConfig(level=logging.ERROR)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if os.path.isfile(expid):
-        config = read_simulation_config(expid)
-    else:
-        config = read_simulation_config(
-            os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
-        )
+    config = read_simulation_config(expid)
+        
     monitor = Simulation_Monitor(
         config.get("user"),
         config.get("host"),
