@@ -18,7 +18,7 @@ For automatic visualization of an experiment called "something", you can do this
 ```shell
 $ pip install --user git+https://github.com/pgierz/esm-viz
 $ esm_viz --version
-0.8.1
+0.8.3
 ```
 
 You also need a file called `something.yaml`, which should be in your `${HOME}/.config/monitoring`
