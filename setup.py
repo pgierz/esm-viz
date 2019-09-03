@@ -49,7 +49,7 @@ setup(
     include_package_data=True,
     keywords="esm_viz",
     name="esm_viz",
-    packages=find_packages(include=["esm_viz", "deployment", "analysis", "visualization"]),
+    packages=find_packages(include=["esm_viz", "esm_viz.deployment", "esm_viz.analysis", "esm_viz.visualization"]),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
