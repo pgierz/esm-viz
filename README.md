@@ -14,12 +14,31 @@ Since you don't like reading; I'll assume you know what all of that means. If no
 - - - -
 # Installation
 
+## As `root`:
+
 ```shell
 $ pip install git+https://github.com/pgierz/esm-viz
 $ esm_viz --version
 0.8.3
 ```
-If you are root, everything should work out of the box. Otherwise, pass the `--user` prefix to `pip`. This will install the package under `${HOME}/.local/`, where binaries are in the `bin` folder, and Python code in `lib`. You can override this directory with the `--prefix` flag. For more info, see [here](https://pip.pypa.io/en/stable/reference/pip_install/#pip-install)
+If you are root, everything should work out of the box.
+## As a regular user:
+
+
+```shell
+$ pip install --user git+https://github.com/pgierz/esm-viz
+$ esm_viz --version
+0.8.3
+```
+Otherwise, pass the `--user` prefix to `pip`. This will install the package under `${HOME}/.local/`, where binaries are in the `bin` folder, and Python code in `lib`. 
+
+## As a regular user with a non-default install path:
+```shell
+$ pip install --user --prefix /some/path git+https://github.com/pgierz/esm-viz
+$ esm_viz --version
+0.8.3
+```
+You can override this directory with the `--prefix` flag. For more info, see [here](https://pip.pypa.io/en/stable/reference/pip_install/#pip-install)
 
 
 - - - -
