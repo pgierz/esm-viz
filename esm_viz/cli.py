@@ -14,6 +14,13 @@ import time
 import click
 from crontab import CronTab
 
+
+# For nbconvert programatically:
+import nbconvert
+import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
+
+
 import esm_viz
 from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS
@@ -266,14 +273,23 @@ def combine(expid, quiet):
         )
     if not quiet:
         click.echo("Combined notebook; executing and converting to HTML")
-    os.system(
-        "/scratch/work/pgierz/anaconda3/envs/pyviz/bin/jupyter nbconvert --execute {:s} --to html".format(
-            expid + ".ipynb"
-        )
-    )
-    os.rename(
-        expid + ".html", os.environ.get("HOME") + "/public_html/" + expid + ".html"
-    )
+    # TODO(pgierz): We already have the notebook bits and pieces in memory,
+    # this is currently just needlessly opening and closing files. I feel it is
+    # "OK" for now, but it could cut down the code. So, a TODO for when I get
+    # bored:
+    # Here, we execute the notebook:
+    with open(expid+".ipynb") as notebookfile:
+        # PG: What's the as_version=4 for?
+        nb = nbformat.read(notebookfile, as_version=4)
+    ten_minutes = 10*60
+    ep = ExecutePreprocessor(timeout=ten_minutes)
+    ep.preprocess(nb, {'metadata': {'path': './'}})
+    # Now save the file (maybe direclty as html?)
+    html_exporter = nbconvert.HTMLExporter()
+    out, resources = nbconvert.exporters.export(html_exporter, nb)
+    with open(os.environ.get("HOME") + "/public_html/" + expid + ".html") as website:
+        website.write(out)
+
     if not quiet:
         click.echo("Cleaning up...")
     os.remove(".config_ipynb")
