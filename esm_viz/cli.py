@@ -22,6 +22,9 @@ from .visualization.nbmerge import merge_notebooks
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 
+
+
+
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -291,7 +294,7 @@ def configure():
     click.echo("Hi, this is the configure command. It's being built, please be patient and pet the owl.")
     return
     config_dir = os.environ["HOME"] + "./config/monitoring"
-    if not os.path.isdirectory(config_dir):
+    if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
     if not os.path.isfile("known_supercomputers.yaml"):
         known_computers = {}
@@ -303,6 +306,13 @@ def configure():
 def edit(expid):
     """Opens the YAML config for ``expid`` in your $EDITOR"""
     click.edit(filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml")
+
+
+@main.command()
+def show_paths():
+    click.echo("A small utility to show where the esm_viz binary is")
+    click.echo("Code is here: %s" % module_path)
+    click.echo("Bin could be here: %s" % os.path.normpath(os.path.join(module_path+"/../../bin/")))
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
