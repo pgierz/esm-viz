@@ -2,44 +2,73 @@
 
 [![Join the chat at https://gitter.im/esm-viz/community](https://badges.gitter.im/esm-viz/community.svg)](https://gitter.im/esm-viz/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-If you don't like reading, here's what to do:
-1. Make sure you don't have ssh password requirements anywhere
-1. Write a script that minimizes your data on your compute server
-1. Write a script that copies it to your analysis server
-1. Write a visualization script that can export to HTML
-1. Write a cronjob that executes all of the above, and moves the HTML to a folder `${HOME}/public_html`
-
-Since you don't like reading; I'll assume you know what all of that means. If not, please read on...
-
 - - - -
 # Installation
 
-## As `root`:
+## 1 Generate SSH keys
 
+A login onto the machine where the model simulation is performed without entering a password is necessary for `esm_viz`. To realize this, a pair of authentification keys can be generated with
 ```shell
-$ pip install git+https://github.com/pgierz/esm-viz
-$ esm_viz --version
-0.8.3
+user@paleosrv1 $ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/absolute/path/.ssh/id_rsa): [enter] 
+/absolute/path/.ssh/id_rsa already exists.
+Overwrite (y/n)? y [enter]
+Enter passphrase (empty for no passphrase): [enter]
+Enter same passphrase again: [enter] 
+Your identification has been saved in /absolute/path/.ssh/id_rsa.
+Your public key has been saved in /absolute/path/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:irvnSeEHy8kSzVOWLJHiIiLsSnTvugT2IHhVAyKU2rM user@paleosrv1
+The key's randomart image is:
++---[RSA 2048]----+
+|o.o ..+.         |
+| o ....+ .       |
+|o. .... =        |
+|*o+o.o +         |
+|B=o+o * S        |
+|o+E  B B         |
+|o  o+ O .        |
+|. .  =.o         |
+|   o=+o          |
++----[SHA256]-----+
 ```
-If you are root, everything should work out of the box.
-## As a regular user:
 
+Now tell the machine, where the model simulation performs (e.g. ollie1.awi.de or mistral.dkrz.de), who you are, i.e. provide the public key:
+```shell
+user@paleosrv1 $ ssh user@supercomputer mkdir -p .ssh
+user@supercomputer's password:
+user@paleosrv1 $ cat /path/to/our/generated/keyfile/id_rsa.pub | ssh user@supercomputer 'cat >> .ssh/authorized_keys'
+user@supercomputer's password:
+```
 
+Thats it. Now you can login onto the supercomputer from paleosrv1 without entering your password:
+```shell
+user@paleosrv1 $ ssh user@supercomputer
+```
+
+Note that if you want to generate a key file with a different name than the default `id_rsa`, you then need to connect via `ssh -i my_key_name user@supercomputer` (the private key is used here after the `-i`, not the public one, i.e. `my_key_name.pub`).
+
+## 2 Install esm_viz
+
+Install `esm_viz` on paleosrv1 with 
 ```shell
 $ pip install --user git+https://github.com/pgierz/esm-viz
-$ esm_viz --version
-0.8.3
 ```
-Otherwise, pass the `--user` prefix to `pip`. This will install the package under `${HOME}/.local/`, where binaries are in the `bin` folder, and Python code in `lib`. 
-
-## As a regular user with a non-default install path:
+or, if you want a different than default (`= ~/.local/`) installation directory
 ```shell
 $ pip install --user --prefix /some/path git+https://github.com/pgierz/esm-viz
+```
+Check the installed version:
+```
 $ esm_viz --version
 0.8.3
 ```
-You can override this directory with the `--prefix` flag. For more info, see [here](https://pip.pypa.io/en/stable/reference/pip_install/#pip-install)
 
+For more info on the pyton installer, see [here](https://pip.pypa.io/en/stable/reference/pip_install/#pip-install). Note that as `root`, the installation also works with 
+```shell
+$ pip install git+https://github.com/pgierz/esm-viz
+```
 
 - - - -
 For automatic visualization of an experiment called "something", you can do this:
