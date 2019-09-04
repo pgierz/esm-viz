@@ -208,6 +208,8 @@ def deploy(expid, quiet):
     "--expid", default="example", help="The YAML file found in ~/.config/monitoring"
 )
 def combine(expid, quiet):
+    if not os.path.isdir(os.path.join(os.environ.get("HOME"), "public_html")):
+        os.makedirs(os.path.join(os.environ.get("HOME"), "public_html"))
     if quiet:
         logging.basicConfig(level=logging.ERROR)
     else:
