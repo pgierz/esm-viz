@@ -1,4 +1,4 @@
-# TL;DR
+# esm_viz
 
 [![Join the chat at https://gitter.im/esm-viz/community](https://badges.gitter.im/esm-viz/community.svg)](https://gitter.im/esm-viz/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -200,19 +200,6 @@ And, of course, all of the above steps **should happen automatically**, in the b
 # Solving some of the overhead:
 
 So, let's go through and try to solve some of the problems we had to make this whole thing a bit quicker and more reproducible
-
-## Typing your password for everything
-
-You can have the `ssh` protocol save your password and automatically send it to the other computer via so-called `ssh-keys`. Let's set that up:
-
-```shell
-ssh-keygen -t rsa
-ssh `whoami`@ollie1.awi.de mkdir -p .ssh
-cat ${HOME}/.ssh/id_rsa.pub | \
-    ssh `whoami`@ollie1.awi.de 'cat >> .ssh/authorized_keys'
-```
-
-Some more info can be found [here](http://www.linuxproblem.org/art_9.html). Alternatively, you can use the provided [script](https://github.com/pgierz/simulation_monitoring/blob/master/generate_automatic_ssh_key.sh) to set up keys. The script will ask you questions and figure out the rest for you.
 
 ## Automate the Pre-Processing for the Analysis
 
