@@ -7,9 +7,9 @@
 
 ## 1 Generate SSH keys
 
-A login onto the machine where the model simulation is performed without entering a password is necessary for `esm_viz`. To realize this, a pair of authentification keys can be generated with
+`esm_viz` needs SSH access to the supercomputer on which the model runs without entering passwords. To realize this, a pair of authentification keys can be generated with
 ```shell
-user@paleosrv1 $ ssh-keygen -t rsa
+user_paleosrv1@paleosrv1 $ ssh-keygen -t rsa
 Generating public/private rsa key pair.
 Enter file in which to save the key (/absolute/path/.ssh/id_rsa): [enter] 
 /absolute/path/.ssh/id_rsa already exists.
@@ -19,7 +19,7 @@ Enter same passphrase again: [enter]
 Your identification has been saved in /absolute/path/.ssh/id_rsa.
 Your public key has been saved in /absolute/path/.ssh/id_rsa.pub.
 The key fingerprint is:
-SHA256:irvnSeEHy8kSzVOWLJHiIiLsSnTvugT2IHhVAyKU2rM user@paleosrv1
+SHA256:irvnSeEHy8kSzVOWLJHiIiLsSnTvugT2IHhVAyKU2rM user_paleosrv1@paleosrv1
 The key's randomart image is:
 +---[RSA 2048]----+
 |o.o ..+.         |
@@ -34,20 +34,20 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
-Now tell the machine, where the model simulation performs (e.g. ollie1.awi.de or mistral.dkrz.de), who you are, i.e. provide the public key:
+Now, tell the supercomputer on which the model runs (e.g. ollie1.awi.de or mistral.dkrz.de), who you are, i.e. provide the public key:
 ```shell
-user@paleosrv1 $ ssh user@supercomputer mkdir -p .ssh
-user@supercomputer's password:
-user@paleosrv1 $ cat /path/to/our/generated/keyfile/id_rsa.pub | ssh user@supercomputer 'cat >> .ssh/authorized_keys'
-user@supercomputer's password:
+user_paleosrv1@paleosrv1 $ ssh user_supercomputer@supercomputer mkdir -p .ssh
+user_supercomputer@supercomputer's password:
+user_paleosrv1@paleosrv1 $ cat /path/to/our/generated/keyfile/id_rsa.pub | ssh user_supercomputer@supercomputer 'cat >> .ssh/authorized_keys'
+user_supercomputer@supercomputer's password:
 ```
 
 Thats it. Now you can login onto the supercomputer from paleosrv1 without entering your password:
 ```shell
-user@paleosrv1 $ ssh user@supercomputer
+user_paleosrv1@paleosrv1 $ ssh user_supercomputer@supercomputer
 ```
 
-Note that if you want to generate a key file with a different name than the default `id_rsa`, you then need to connect via `ssh -i my_key_name user@supercomputer` (the private key is used here after the `-i`, not the public one, i.e. `my_key_name.pub`).
+Note that if you want to generate a key file with a different name than the default `id_rsa`, you then need to connect via `ssh -i my_key_name user_supercomputer@supercomputer` (the private key is used here after the `-i`, not the public one, i.e. `my_key_name.pub`).
 
 ## 2 Install esm_viz
 
