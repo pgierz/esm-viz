@@ -5,3 +5,4 @@ nbmerge
 paramiko
 python-crontab
 pyyaml
+nbconvert
