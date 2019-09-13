@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Console script for esm_viz."""
@@ -15,9 +15,9 @@ import click
 from crontab import CronTab
 
 import esm_viz
-from esm_viz.deployment import Simulation_Monitor
+from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS
-from esm_viz.visualization.nbmerge import merge_notebooks
+from .visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
@@ -66,15 +66,12 @@ def schedule(expid, frequency):
     """
     cron = CronTab(user=True)
     job = cron.new(
-        command="source activate pyviz; /scratch/work/pgierz/anaconda3/bin/esm_viz deploy --expid "
+        command="esm_viz deploy --expid "
         + expid
-        + " && /scratch/work/pgierz/anaconda3/bin/esm_viz combine --expid "
+        + " && esm_viz combine --expid "
         + expid,
         comment="Monitoring for " + expid,
     )
-    job.env[
-        "PATH"
-    ] = "/scratch/work/pgierz/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     job.every(frequency).hours()
     if job.is_valid():
         job.enable()
@@ -101,17 +98,14 @@ def deploy(expid, quiet):
     quiet : bool
         Turn off more verbose logging
     """
+
     if quiet:
         logging.basicConfig(level=logging.ERROR)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if os.path.isfile(expid):
-        config = read_simulation_config(expid)
-    else:
-        config = read_simulation_config(
-            os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
-        )
+    config = read_simulation_config(expid)
+        
     monitor = Simulation_Monitor(
         config.get("user"),
         config.get("host"),
@@ -287,13 +281,15 @@ def combine(expid, quiet):
 
 @main.command()
 def template():
-    print(
+    click.echo(
         "Hi, this is the template command. It's being built, please be patient and pet the owl."
     )
 
 
 @main.command()
 def configure():
+    click.echo("Hi, this is the configure command. It's being built, please be patient and pet the owl.")
+    return
     config_dir = os.environ["HOME"] + "./config/monitoring"
     if not os.path.isdirectory(config_dir):
         os.makedirs(config_dir)
@@ -301,6 +297,12 @@ def configure():
         known_computers = {}
         # Not yet done....
 
+@click.option(
+    "--expid", default="example", help="The experiment ID you wish to edit")
+@main.command()
+def edit(expid):
+    """Opens the YAML config for ``expid`` in your $EDITOR"""
+    click.edit(filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml")
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
