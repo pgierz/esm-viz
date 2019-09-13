@@ -26,11 +26,21 @@ The following functions are defined here:
 ``mkdir_p``
     A remote version of recursive directory creation
 
+``get_password_for_machine``
+    Asks for your remote password
+
+``generate_keypair``
+    Generates a specific key for ``esm_viz`` to use
+
+``deploy_keypair``
+    Copies the ``esm_viz`` key to the supercomputer
+
 
 Specific documentation is shown below
 
 -------
 """
+import getpass
 import logging
 import os
 import sys
@@ -69,7 +79,7 @@ def mkdir_p(sftp, remote_directory):
     Change to this directory, recursively making new folders if needed.
     Returns True if any folders were created.
 
-    This uses recursion. We split up the directory 
+    This uses recursion. We split up the directory
 
     Parameters
     ----------
@@ -98,6 +108,97 @@ def mkdir_p(sftp, remote_directory):
         sftp.mkdir(basename)  # sub-directory missing, so created it
         sftp.chdir(basename)
         return True
+
+
+def get_password_for_machine(user, host):
+    """
+    Asks for your password
+
+    Parameters
+    ----------
+    user :
+        The user to ask for
+    host :
+        The machine to log in to
+
+    Notes
+    -----
+        Uses f strings, might be Python 3 specific
+    """
+    print(f"To set up simulation monitoring for {host}, I need to know your password")
+    print("Don't worry, it will not be stored to disk.")
+    passprompt = f"Please enter the password for {user}@{host}"
+    return getpass.getpass(prompt=passprompt)
+
+
+def generate_keypair(user, host):
+    """
+    Makes a key for ``esm_viz`` to use
+
+    Parameters
+    ----------
+    user :
+        The user to ask for
+    host :
+        The machine to log in to
+
+    Notes
+    -----
+        Uses f strings, might be Python 3 specific
+    """
+    print(f"Generating a specific key for esm_viz to use for {host}")
+    priv = paramiko.RSAKey.generate(2048)
+    subpath = (".config", "esm_viz", "keys")
+    keypath = os.path.join(os.environ.get("HOME"), *subpath, f"{user}_{host}")
+    # Private Key:
+    priv.write_private_key_file(keypath)
+    # Public Key
+    pub = paramiko.RSAKey(filename=keypath)
+    with open(keypath + ".pub", "w") as pub_key_file:
+        pub_key_file.write("%s %s" % (pub.get_name(), pub.get_base64()))
+
+
+def deploy_keypair(user, host):
+    """
+    Puts the ``esm_viz`` key onto the remote machine
+
+    Parameters
+    ----------
+    user :
+        The user to ask for
+    host :
+        The machine to log in to
+
+    Notes
+    -----
+        Uses f strings, might be Python 3 specific
+
+    Returns
+    -------
+        The public key filepath on **this** computer
+    """
+    subpath = (".config", "esm_viz", "keys")
+    priv_file = os.path.join(os.environ.get("HOME"), *subpath, f"{user}_{host}")
+    if not os.path.isfile(priv_file):
+        generate_keypair(user, host)
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    # TODO: get user preference for the policy
+    client.set_missing_host_key_policy(paramiko.WarningPolicy)
+    remote_password = get_password_for_machine(user, host)
+    client.connect(host, username=user, password=remote_password)
+    sftp = client.open_sftp()
+    # If HOME isn't set....oh well...
+    _, stdout, _ = client.exec_command("echo $HOME")
+    remote_home = stdout.readlines()[0].strip()
+    known_hosts_remote = os.path.join(remote_home, ".ssh/known_hosts")
+    with sftp.open(known_hosts_remote, "a") as r_known_hosts:
+        with open(priv_file + ".pub", "r") as esm_viz_pub_key:
+            r_known_hosts.write(esm_viz_pub_key.readlines())
+    print("Deleting your password from memory...")
+    del remote_password
+    # Give back the path of the public key for further use:
+    return priv_file + ".pub"
 
 
 class Simulation_Monitor(object):
@@ -142,7 +243,10 @@ class Simulation_Monitor(object):
         The location where analyzed data should be stored on this computer
         after copying
     """
-    def __init__(self, user, host, basedir, coupling, storage_prefix, required_modules=[]):
+
+    def __init__(
+        self, user, host, basedir, coupling, storage_prefix, required_modules=[]
+    ):
         """
         Initializes a new monitoring object.
 
@@ -163,22 +267,11 @@ class Simulation_Monitor(object):
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
-            with open(
-                os.environ["HOME"] + "/simulation_monitoring_errors", "a"
-            ) as error_file:
-                error_file.write(
-                    "Hey, you should setup ssh keys for %s. Try using esm-viz/deployment/generate_automatic_ssh_key.sh"
-                    % host
-                )
-                error_file.write(
-                    "Cowardly refusing to do anything until you get your keys figured out. Goodbye."
-                )
-                logging.error(
-                    "Hey, you can't log on to this computer: %s. Set up your keys!!! See also the error message in your home folder!",
-                    self.host,
-                )
-                sys.exit()
+            generate_keypair(self.host, self.user)
+            self.public_keyfile = deploy_keypair(self.host, self.user)
+            self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
         """
@@ -197,13 +290,21 @@ class Simulation_Monitor(object):
         except paramiko.ssh_exception.AuthenticationException:
             return False
 
+    def _connect(self):
+        if self._using_esm_viz_key:
+            self.ssh.connect(
+                self.host, username=self.user, key_filename=self.public_keyfile
+            )
+        else:
+            self.ssh.connect(self.host, username=self.user)
+
     def _determine_this_setup(self, component):
         """
         This determines which setup a particular component belongs to in
         iteratively coupled experiments.
 
         Using the attribute ``self.coupling_setup``; we check which of the
-        setups ``component`` belongs to. A key assumption isn't that you aren't
+        setups ``component`` belongs to. A key assumption is that you aren't
         coupling something that contains the same component twice.
 
         Parameters
@@ -251,11 +352,11 @@ class Simulation_Monitor(object):
     def copy_analysis_script_for_component(self, component, analysis_script):
         """
         Copies a specified analysis script to a folder ``${EXPBASE}/analysis/<component>``
-        
+
         Example:
         --------
             Let's assume you've initialized a ``Simulation_Monitor`` object like this:
-        
+
             >>> monitor = Simulation_Monitor(
             ...     user='pgierz',
             ...     host='ollie1.awi.de',
@@ -263,27 +364,27 @@ class Simulation_Monitor(object):
             ...     coupling=False,
             ...     storage_prefix='/scratch/work/pgierz'
             ...     )
-        
-            Given a ``component``, e.g. ``echam``, and an ``analysis_script``, e.g. 
+
+            Given a ``component``, e.g. ``echam``, and an ``analysis_script``, e.g.
             ``/home/csys/pgierz/example_script.sh``, this method would do the following:
-        
+
             >>> monitor.copy_analysis_script_for_component(
             ...     'echam',
             ...     '/home/csys/pgierz/example_script.sh'
             ...     )
             The analysis script will be copied to: /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
-            Copying: 
-                /home/csys/pgierz/example_script 
-            to 
-                pgierz@ollie1.awi.de:/work/ollie/pgierz/AWICM/PI/analysis/echam/     
+            Copying:
+                /home/csys/pgierz/example_script
+            to
+                pgierz@ollie1.awi.de:/work/ollie/pgierz/AWICM/PI/analysis/echam/
             Ensuring script is executable...
                 chmod 755 /work/ollie/pgierz/AWICM/PI/analysis/echam/example_script.sh
             Done!
-            
+
         .. note::
-            
+
             The copying is only performed if the script is not already there!
-        
+
         Parameters:
         -----------
         component : :class:`str`
@@ -291,7 +392,7 @@ class Simulation_Monitor(object):
         analysis_script : :class:`str`
             The script that will automatically analyze this component
         """
-        self.ssh.connect(self.host, username=self.user)
+        self._connect()
         with self.ssh.open_sftp() as sftp:
             remote_analysis_script_directory = self._determine_remote_analysis_dir(
                 component
@@ -339,7 +440,7 @@ class Simulation_Monitor(object):
         remote_analysis_script_directory = self._determine_remote_analysis_dir(
             component
         )
-        self.ssh.connect(self.host, username=self.user)
+        self._connect(self.host, username=self.user)
         logging.info("Executing %s...", analysis_script)
         self.ssh.invoke_shell()
         args = [
@@ -348,11 +449,20 @@ class Simulation_Monitor(object):
         logging.info("With arguments %s...", args)
         if self.required_modules:
             logging.info("Loading modules %s...", self.required_modules)
-            module_command = 'module purge; module load '+" ".join(self.required_modules)
+            module_command = "module purge; module load " + " ".join(
+                self.required_modules
+            )
         else:
             module_command = ""
-        stdin, stdout, stderr = self.ssh.exec_command("bash -l -c '"+module_command+"; cd "+remote_analysis_script_directory+"; "+" ".join(["./"+analysis_script] + args + ["'"]),
-                get_pty=True)
+        stdin, stdout, stderr = self.ssh.exec_command(
+            "bash -l -c '"
+            + module_command
+            + "; cd "
+            + remote_analysis_script_directory
+            + "; "
+            + " ".join(["./" + analysis_script] + args + ["'"]),
+            get_pty=True,
+        )
         for stream, tag in zip([stdin, stdout, stderr], ["stdin", "stdout", "stderr"]):
             try:
                 logging.info(tag)
@@ -373,7 +483,7 @@ class Simulation_Monitor(object):
         variable : :class:`str`
             The variable name to look for
         tag : :class:`str`
-            A unique tag to label the data. The remote file uses this to built
+            A unique tag to label the data. The remote file uses this to build
             it's filename. The default construction of the remote filename
             looks like this: ``${EXP_ID}_${component}_${variable}_${tag}.nc``
         """
@@ -390,7 +500,7 @@ class Simulation_Monitor(object):
         destination_dir = self.storagedir + "/analysis/" + component
         if not os.path.exists(destination_dir):
             os.makedirs(destination_dir)
-        self.ssh.connect(self.host, username=self.user)
+        self._connect(self.host, username=self.user)
         with self.ssh.open_sftp() as sftp:
             remote_analysis_script_directory = self._determine_remote_analysis_dir(
                 component
