@@ -17,8 +17,8 @@ These do basically what they say they do, but, since we want to be explicit:
 """
 # Python Standard Library
 import datetime
-import os, sys
 import re
+import os
 
 # Third-Party Packages
 from IPython.core.display import display, HTML
@@ -30,7 +30,6 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.patches import Circle, Wedge, Rectangle
 
-import matplotlib
 import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
@@ -112,7 +111,8 @@ def quota_parser_ollie(quota_output):
         quota_used_TB = float(used[1][0])
         quota_available_TB = float(used[1][4])
         return quota_used_TB * 10 ** 12, quota_available_TB * 10 ** 12
-    except:
+    # PG: I'd like to have a more general error here:
+    except IndexError:
         # Something probably changed with Malte's quota program. You get
         # nothing back, twice; the "normal" behaviour also gives you back
         # a 2-element tuple.
@@ -276,42 +276,6 @@ def compute_throughput(log_df):
     return diffs.mean(), throughput, diffs
 
 
-# Average walltime and effective number of simulated years per day:
-# FIXME: What about coupling????
-def compute_walltime_and_throughput(config, esm_style=True):
-    # NOTE: ``exp`` is actually ``basedir``
-    exp = config["basedir"]
-    model = config["model"].lower()
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(config["host"], username=config["user"])
-    stdin, stdout, stderr = client.exec_command(
-        "cd " + exp + '/scripts; grep -i "initial_date" *.run'
-    )
-    start_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
-    # This won't work for coupled experiments:
-    stdin, stdout, stderr = client.exec_command("cd " + exp + "/scripts; cat *.date")
-    if esm_style:
-        current_year = stdout.readlines()[0].split("=")[-1].split("-")[0]
-    else:
-        current_year = stdout.readlines()[0].split()[0][:4]
-    stdin, stdout, stderr = client.exec_command(
-        "cd " + exp + '/scripts; grep -i "final_date" *.run'
-    )
-    final_year = stdout.readlines()[0].split()[0].split("=")[-1].split("-")[0]
-    start_year = int(start_year)
-    current_year = int(current_year) - start_year
-    final_year = int(final_year) - start_year
-
-    walltime, throughput, diffs = compute_effective_throughput(
-        generate_dataframe_from_mpiesm_logfile(get_log_output(exps_full[0]))
-    )
-    df = pd.DataFrame.from_dict(
-        {"Walltime": walltime, "Throughput": throughput}, orient="index"
-    )
-    return df
-
-
 def progress_bar(config):
     log = get_log_output(config)
     log_df = generate_dataframe_from_esm_logfile(log)
@@ -381,7 +345,7 @@ def progress_bar(config):
         + str(np.round(years_per_day, 2))
         + "runs/day"
     )
-    from tqdm import tnrange, tqdm_notebook
+    from tqdm import tqdm_notebook
 
     pbar = tqdm_notebook(
         total=total_number_of_runs,
@@ -450,7 +414,7 @@ def gauge(
 
     """
     some sanity checks first
-    
+
     """
 
     N = len(labels)
@@ -465,7 +429,7 @@ def gauge(
 
     """
     if colors is a string, we assume it's a matplotlib colormap
-    and we discretize in N discrete colors 
+    and we discretize in N discrete colors
     """
 
     if isinstance(colors, str):

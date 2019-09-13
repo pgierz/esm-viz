@@ -7,12 +7,12 @@ import os
 def get_local_storage_dir_from_config(config):
     """
     Retrieves the local strorage directory from the config
-    
+
     Parameters
     ----------
     config : dict
         Your monitoring configuration based on the yaml file
-    
+
     Returns
     -------
     storage_path : str

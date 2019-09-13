@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import cartopy.crs as ccrs
 import holoviews as hv
-import hvplot.xarray
+import hvplot.xarray  # noqa
 import geoviews as gv
 
 import cmocean
@@ -167,12 +167,10 @@ def plot_global_climatology(config):
             ax.gridlines()
             ax.coastlines()
 
-            cf = ax.contourf(ds[variable].squeeze(), cmap=user_cmap, **plot_kwargs)
+            ax.contourf(ds[variable].squeeze(), cmap=user_cmap, **plot_kwargs)
 
             if hasattr(ds[variable], "long_name") and hasattr(ds[variable], "units"):
-                cbar_label = ds[variable].long_name + " (" + ds[variable].units + ")"
-            else:
-                cbar_label = variable
+                ds[variable].long_name + " (" + ds[variable].units + ")"
             return_list.append((f, ax))
     if "use_hvplot" in config:
         return hv.Layout(return_list).cols(1)

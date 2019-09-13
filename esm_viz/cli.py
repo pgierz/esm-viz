@@ -315,6 +315,7 @@ def configure():
         os.makedirs(config_dir)
     if not os.path.isfile("known_supercomputers.yaml"):
         known_computers = {}
+        print(known_computers)
         # Not yet done....
 
 

@@ -2,6 +2,8 @@
 This module contains tools for plotting FESOM timeseries and climatology maps
 """
 
+import os
+
 import matplotlib.pyplot as plt
 import xarray as xr
 import cartopy.crs as ccrs
@@ -11,6 +13,7 @@ import geoviews as gv
 
 import cmocean
 import pyfesom as pf
+import paramiko
 from IPython.core.display import display, HTML
 
 from esm_viz.visualization import get_local_storage_dir_from_config
