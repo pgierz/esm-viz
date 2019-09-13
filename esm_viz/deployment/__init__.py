@@ -149,7 +149,7 @@ def generate_keypair(user, host):
     print("Generating a specific key for esm_viz to use for %s" % host)
     priv = paramiko.RSAKey.generate(2048)
     subpath = (".config", "esm_viz", "keys")
-    keypath = os.path.join(os.environ.get("HOME"), *subpath, "%s_%s" % (user, host)
+    keypath = os.path.join(os.environ.get("HOME"), *subpath, "%s_%s" % (user, host))
     # Private Key:
     priv.write_private_key_file(keypath)
     # Public Key
