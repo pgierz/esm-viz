@@ -21,6 +21,7 @@ def yaml_to_dict(f):
         config = yaml.load(cfg, Loader=yaml.FullLoader)
     return config
 
+
 def read_simulation_config(config_file):
     """
     Reads a simulation monitoring file and returns a parsed dictionary.
@@ -39,10 +40,9 @@ def read_simulation_config(config_file):
     if os.path.isfile(config_file):
         if not os.path.isfile(os.path.join(config_dir, os.path.basename(config_file))):
             print("Copying file to config folder")
-            shutil.copyfile(config_file, config_dir+os.path.basename(config_file))
+            shutil.copyfile(config_file, config_dir + os.path.basename(config_file))
         return yaml_to_dict(config_file)
     elif os.path.isfile(os.path.join(config_dir, config_file)):
         return read_simulation_config(os.path.join(config_dir, config_file))
-    else: # Not a file, probably just experiment name
-        return read_simulation_config(config_file+".yaml")
-
+    else:  # Not a file, probably just experiment name
+        return read_simulation_config(config_file + ".yaml")

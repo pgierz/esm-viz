@@ -178,7 +178,7 @@ def deploy_keypair(user, host):
         The public key filepath on **this** computer
     """
     subpath = (".config", "esm_viz", "keys")
-    priv_file = os.path.join(os.environ.get("HOME"), *subpath, "%s_%s" % (user, host)
+    priv_file = os.path.join(os.environ.get("HOME"), *subpath, "%s_%s" % (user, host))
     if not os.path.isfile(priv_file):
         generate_keypair(user, host)
     client = paramiko.SSHClient()

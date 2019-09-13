@@ -50,7 +50,7 @@ setup(
     keywords="esm_viz",
     name="esm_viz",
     packages=find_packages(),
-    package_dir = {'esm_viz': 'esm_viz'},
+    package_dir={"esm_viz": "esm_viz"},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,

@@ -29,9 +29,6 @@ from .visualization.nbmerge import merge_notebooks
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 
-
-
-
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -115,7 +112,7 @@ def deploy(expid, quiet):
         logging.basicConfig(level=logging.INFO)
 
     config = read_simulation_config(expid)
-        
+
     monitor = Simulation_Monitor(
         config.get("user"),
         config.get("host"),
@@ -283,12 +280,12 @@ def combine(expid, quiet):
     # "OK" for now, but it could cut down the code. So, a TODO for when I get
     # bored:
     # Here, we execute the notebook:
-    with open(expid+".ipynb") as notebookfile:
+    with open(expid + ".ipynb") as notebookfile:
         # PG: What's the as_version=4 for?
         nb = nbformat.read(notebookfile, as_version=4)
-    ten_minutes = 10*60
+    ten_minutes = 10 * 60
     ep = ExecutePreprocessor(timeout=ten_minutes)
-    ep.preprocess(nb, {'metadata': {'path': './'}})
+    ep.preprocess(nb, {"metadata": {"path": "./"}})
     # Now save the file (maybe direclty as html?)
     html_exporter = nbconvert.HTMLExporter()
     out, resources = nbconvert.exporters.export(html_exporter, nb)
@@ -309,7 +306,9 @@ def template():
 
 @main.command()
 def configure():
-    click.echo("Hi, this is the configure command. It's being built, please be patient and pet the owl.")
+    click.echo(
+        "Hi, this is the configure command. It's being built, please be patient and pet the owl."
+    )
     return
     config_dir = os.environ["HOME"] + "./config/monitoring"
     if not os.path.isdir(config_dir):
@@ -318,19 +317,25 @@ def configure():
         known_computers = {}
         # Not yet done....
 
-@click.option(
-    "--expid", default="example", help="The experiment ID you wish to edit")
+
+@click.option("--expid", default="example", help="The experiment ID you wish to edit")
 @main.command()
 def edit(expid):
     """Opens the YAML config for ``expid`` in your $EDITOR"""
-    click.edit(filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml")
+    click.edit(
+        filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
+    )
 
 
 @main.command()
 def show_paths():
     click.echo("A small utility to show where the esm_viz binary is")
     click.echo("Code is here: %s" % module_path)
-    click.echo("Bin could be here: %s" % os.path.normpath(os.path.join(module_path+"/../../bin/")))
+    click.echo(
+        "Bin could be here: %s"
+        % os.path.normpath(os.path.join(module_path + "/../../bin/"))
+    )
+
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover

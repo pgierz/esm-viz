@@ -23,6 +23,7 @@ import re
 # Third-Party Packages
 from IPython.core.display import display, HTML
 from IPython.display import display_html
+
 # PG: Not sure if I like importing matplotlib so often, could probably be
 # simpler..
 from matplotlib import cm
@@ -69,7 +70,6 @@ def stripComments(code):
     return re.sub(r"(?m) *#.*\n?", "", code)
 
 
-
 def queue_info(username, host, verbose=True):
     """
     Gets Batch Scheduler queueing information
@@ -97,7 +97,7 @@ def queue_info(username, host, verbose=True):
     # probably.
     if len(queue_status) <= 1:
         if verbose:
-            print('No jobs running on', host)
+            print("No jobs running on", host)
         return None
     queue_status = [l.split() for l in queue_status]
     queue_df = pd.DataFrame(queue_status[1:])
@@ -337,7 +337,13 @@ def progress_bar(config):
     # from the end)
     current_date = int(stdout.readlines()[0][:-5])
 
-    remote_command = ("cd " + config["basedir"] + "/scripts/; cat " + date_filename + " |awk '{ print $2 }'")
+    remote_command = (
+        "cd "
+        + config["basedir"]
+        + "/scripts/; cat "
+        + date_filename
+        + " |awk '{ print $2 }'"
+    )
     stdin, stdout, stderr = client.exec_command(remote_command)
     current_run = int(stdout.readlines()[0])
 
