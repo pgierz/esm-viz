@@ -440,7 +440,7 @@ class Simulation_Monitor(object):
         remote_analysis_script_directory = self._determine_remote_analysis_dir(
             component
         )
-        self._connect(self.host, username=self.user)
+        self._connect()
         logging.info("Executing %s...", analysis_script)
         self.ssh.invoke_shell()
         args = [
@@ -500,7 +500,7 @@ class Simulation_Monitor(object):
         destination_dir = self.storagedir + "/analysis/" + component
         if not os.path.exists(destination_dir):
             os.makedirs(destination_dir)
-        self._connect(self.host, username=self.user)
+        self._connect()
         with self.ssh.open_sftp() as sftp:
             remote_analysis_script_directory = self._determine_remote_analysis_dir(
                 component
