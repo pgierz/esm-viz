@@ -50,7 +50,6 @@ def determine_running_location():
            ESM-Style experiment
     """
     working_path = Path.cwd()
-    dir_path = Path(os.path.dirname(os.path.realpath(__file__)))
     esm_dirs_to_find = set(
         [
             "bin",
@@ -66,7 +65,6 @@ def determine_running_location():
         ]
     )
     found_exp_base_path = False
-    old_working_dir = dir_path
     while not found_exp_base_path:
         # Determine just the basenames of all directories currently being
         # checked against:
