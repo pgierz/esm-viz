@@ -293,7 +293,7 @@ class Simulation_Monitor(object):
     def _connect(self):
         if self._using_esm_viz_key:
             self.ssh.connect(
-                self.host, username=self.user, key_filename=self.public_keyfile
+                self.host, user=self.user, key_filename=self.public_keyfile
             )
         else:
             self.ssh.connect(self.host, username=self.user)
