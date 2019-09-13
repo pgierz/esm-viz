@@ -35,7 +35,6 @@ def read_simulation_config(config_file):
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
 
-    print(config_file)
     # User gave the a file, which might or might not be in the right directory at this point:
     if os.path.isfile(config_file):
         if not os.path.isfile(os.path.join(config_dir, os.path.basename(config_file))):
