@@ -23,7 +23,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 import esm_viz
 from .deployment import Simulation_Monitor
-from .esm_viz import read_simulation_config, MODEL_COMPONENTS
+from .esm_viz import read_simulation_config, MODEL_COMPONENTS, walk_up
 from .visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
@@ -333,7 +333,7 @@ def show_paths():
     click.echo("A small utility to show where the esm_viz binary is")
     click.echo("Code is here: %s" % module_path)
 
-    for root, dirs, files in esm_viz.walk_up(module_path):
+    for root, dirs, files in walk_up(module_path):
         if "bin" in dirs:
             new_root = root
             break
