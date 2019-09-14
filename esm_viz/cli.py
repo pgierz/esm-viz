@@ -329,15 +329,23 @@ def edit(expid):
 
 
 @main.command()
-def show_paths():
+@click.option("--debug", default=False, is_flag=True)
+def show_paths(debug):
     click.echo("A small utility to show where the esm_viz binary is")
     click.echo("Code is here: %s" % module_path)
 
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
     bin_dir = None
 
     PATH = os.environ.get("PATH").split(":")
     for path_dir in PATH:
+        logging.debug("Checking %s", path_dir)
+        logging.debug("%s is a dir? %s", path_dir, os.path.isdir(path_dir))
         if os.path.isdir(path_dir) and "esm_viz" in os.listdir(path_dir):
+            logging.debug("Found esm_viz in %s", path_dir)
             bin_dir = path_dir
 
     if not bin_dir:
