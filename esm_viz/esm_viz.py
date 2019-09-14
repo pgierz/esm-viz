@@ -45,3 +45,43 @@ def read_simulation_config(config_file):
         return read_simulation_config(os.path.join(config_dir, config_file))
     else:  # Not a file, probably just experiment name
         return read_simulation_config(config_file + ".yaml")
+
+
+def walk_up(bottom):
+    """
+    mimic os.walk, but walk 'up' instead of down the directory tree
+
+    Parameters
+    ----------
+    bottom: str
+        Where to start walking up from
+
+    Yields
+    ------
+    Tuple of (bottom, dirs, nondirs)
+    """
+    bottom = os.path.realpath(bottom)
+
+    # Get files in current dir
+    try:
+        names = os.listdir(bottom)
+    except Exception as e:
+        print(e)
+        return
+
+    dirs, nondirs = [], []
+    for name in names:
+        if os.path.isdir(os.path.join(bottom, name)):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+    yield bottom, dirs, nondirs
+
+    new_path = os.path.realpath(os.path.join(bottom, ".."))
+
+    # See if we are at the top
+    if new_path == bottom:
+        return
+
+    for x in walk_up(new_path):
+        yield x
