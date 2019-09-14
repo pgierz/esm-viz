@@ -79,6 +79,7 @@ def schedule(expid, frequency):
         + expid,
         comment="Monitoring for " + expid,
     )
+    job.env["PATH"] = get_bindir()
     job.every(frequency).hours()
     if job.is_valid():
         job.enable()
