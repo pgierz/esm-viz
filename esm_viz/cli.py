@@ -333,15 +333,23 @@ def show_paths():
     click.echo("A small utility to show where the esm_viz binary is")
     click.echo("Code is here: %s" % module_path)
 
-    for root, dirs, files in walk_up(module_path):
-        if "bin" in dirs:
-            new_root = root
-            break
+    bin_dir = None
 
-    for root, dirs, files in os.walk(new_root):
-        if "esm_viz" in files:
-            bin_dir = root
-            break
+    PATH = os.environ.get("PATH").split(":")
+    for path_dir in PATH:
+        if os.path.isdir(path_dir) and "esm_viz" in os.listdir(path_dir):
+            bin_dir = path_dir
+
+    if not bin_dir:
+        for root, dirs, files in walk_up(module_path):
+            if "bin" in dirs:
+                new_root = root
+                break
+
+        for root, dirs, files in os.walk(new_root):
+            if "esm_viz" in files:
+                bin_dir = root
+                break
 
     click.echo("Bin could be here: %s" % os.path.normpath(os.path.join(bin_dir)))
 
