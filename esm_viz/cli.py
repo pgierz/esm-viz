@@ -347,6 +347,7 @@ def show_paths(debug):
         if os.path.isdir(path_dir) and "esm_viz" in os.listdir(path_dir):
             logging.debug("Found esm_viz in %s", path_dir)
             bin_dir = path_dir
+            break
 
     if not bin_dir:
         for root, dirs, files in walk_up(module_path):
