@@ -23,7 +23,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 import esm_viz
 from .deployment import Simulation_Monitor
-from .esm_viz import read_simulation_config, MODEL_COMPONENTS, walk_up
+from .esm_viz import read_simulation_config, MODEL_COMPONENTS, get_bindir
 from .visualization.nbmerge import merge_notebooks
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
@@ -338,28 +338,7 @@ def show_paths(debug):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    bin_dir = None
-
-    PATH = os.environ.get("PATH").split(":")
-    for path_dir in PATH:
-        logging.debug("Checking %s", path_dir)
-        logging.debug("%s is a dir? %s", path_dir, os.path.isdir(path_dir))
-        if os.path.isdir(path_dir) and "esm_viz" in os.listdir(path_dir):
-            logging.debug("Found esm_viz in %s", path_dir)
-            bin_dir = path_dir
-            break
-
-    if not bin_dir:
-        for root, dirs, files in walk_up(module_path):
-            if "bin" in dirs:
-                new_root = root
-                break
-
-        for root, dirs, files in os.walk(new_root):
-            if "esm_viz" in files:
-                bin_dir = root
-                break
-
+    bin_dir = get_bindir(debug=debug)
     click.echo("Bin could be here: %s" % os.path.normpath(os.path.join(bin_dir)))
 
 

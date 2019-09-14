@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """Main module."""
+import inspect
+import logging
 import os
 import shutil
 
+import esm_viz
 import yaml
 
 MODEL_COMPONENTS = {
@@ -13,6 +16,9 @@ MODEL_COMPONENTS = {
 }
 
 COUPLED_SETUPS = {"awicm pism_standalone": ["awicm", "pism_standalone"]}
+
+
+module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 
 def yaml_to_dict(f):
@@ -85,3 +91,28 @@ def walk_up(bottom):
 
     for x in walk_up(new_path):
         yield x
+
+
+def get_bindir(debug=False):
+    bin_dir = None
+
+    PATH = os.environ.get("PATH").split(":")
+    for path_dir in PATH:
+        logging.debug("Checking %s", path_dir)
+        logging.debug("%s is a dir? %s", path_dir, os.path.isdir(path_dir))
+        if os.path.isdir(path_dir) and "esm_viz" in os.listdir(path_dir):
+            logging.debug("Found esm_viz in %s", path_dir)
+            bin_dir = path_dir
+            break
+
+    if not bin_dir:
+        for root, dirs, files in walk_up(module_path):
+            if "bin" in dirs:
+                new_root = root
+                break
+
+        for root, dirs, files in os.walk(new_root):
+            if "esm_viz" in files:
+                bin_dir = root
+                break
+    return bin_dir

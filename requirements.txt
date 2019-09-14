@@ -5,3 +5,4 @@ paramiko
 python-crontab
 pyyaml
 nbconvert
+holoviz
