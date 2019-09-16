@@ -299,7 +299,9 @@ def combine(expid, quiet):
     # Now save the file (maybe direclty as html?)
     html_exporter = nbconvert.HTMLExporter()
     out, resources = nbconvert.exporters.export(html_exporter, nb)
-    with open(os.environ.get("HOME") + "/public_html/" + expid + ".html") as website:
+    with open(
+        os.environ.get("HOME") + "/public_html/" + expid + ".html", "w"
+    ) as website:
         website.write(out)
 
     if not quiet:
