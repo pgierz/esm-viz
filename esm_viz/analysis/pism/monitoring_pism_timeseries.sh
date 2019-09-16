@@ -27,4 +27,4 @@ fi
 
 cdo select,name=$varname \
         $(ls -rt ${OUTDATA_DIR_pism}/${EXP_ID}_pismr_timeseries*nc)\
-        ${ANALYSIS_DIR_pism}/${EXP_ID}_pismr_timeseries_${varname}.nc
+        ${ANALYSIS_DIR_pism}/${EXP_ID}_pism_${varname}_timeseries.nc
