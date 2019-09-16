@@ -2,6 +2,10 @@
 History
 =======
 
+0.9.5 (2019-09-16)
+------------------
+Install seems to work for Chris. Dependencies still need to be more tightly controlled.
+
 0.9.4 (2019-09-14)
 ------------------
 Lots of changes since the last update. **Missing history**, sorry. Version
