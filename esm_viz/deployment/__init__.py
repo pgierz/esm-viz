@@ -50,6 +50,12 @@ import paramiko
 # wat?
 from esm_viz import esm_viz
 
+# Py2 Py3 Fix: this has implications for the actual type of IO error, but...OK
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def rexists(sftp, path):
     """
