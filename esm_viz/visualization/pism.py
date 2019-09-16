@@ -37,7 +37,7 @@ def plot_timeseries(config):
             pism_nyears = 1 / 12.0
         else:
             raise TypeError("Sorry, don't know what to do for PISM times")
-        ds["time"] = range(1, len(ds["time"]), pism_nyears)
+        ds["time"] = range(0, len(ds["time"]), pism_nyears)
         if "use_hvplot" in config:
             o = ds[variable].squeeze().hvplot.line(title=variable)
             # Due to syntax differences, hvplot (actually Bokeh) has slightly different keywords than matplotlib.
