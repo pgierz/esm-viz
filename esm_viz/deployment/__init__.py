@@ -289,7 +289,8 @@ class Simulation_Monitor(object):
             self.ssh.connect(self.host, username=self.user)
             self.ssh.close()
             return True
-        except paramiko.ssh_exception.AuthenticationException:
+        # PG: This next line probably has implications I am not considering...
+        except paramiko.ssh_exception.SSHException:
             return False
 
     def _connect(self):
@@ -399,12 +400,14 @@ class Simulation_Monitor(object):
             remote_analysis_script_directory = self._determine_remote_analysis_dir(
                 component
             )
+            # FIXME: Chris wants this to be a user defined option
             remote_script = (
                 remote_analysis_script_directory
                 + "/"
                 + os.path.basename(analysis_script)
             )
             logging.info("The analysis script will be copied to: %s", remote_script)
+            # FIXME: Chris wants confirmation for this
             if not rexists(sftp, remote_analysis_script_directory):
                 mkdir_p(sftp, remote_analysis_script_directory)
             if not rexists(sftp, remote_script):
