@@ -235,19 +235,20 @@ def combine(expid, quiet):
             del config[bad_chapter]
     viz_path = module_path + "/visualization/"
     notebooks_to_merge = [viz_path + "read_config.ipynb"]
-    for monitoring_element in config.get("general", []):
-        if os.path.isfile(
-            viz_path
-            + "general_"
-            + monitoring_element.lower().replace(" ", "_")
-            + ".ipynb"
-        ):
-            notebooks_to_merge.append(
+    if "general" in config:
+        for monitoring_element in config.get("general"):
+            if os.path.isfile(
                 viz_path
                 + "general_"
                 + monitoring_element.lower().replace(" ", "_")
                 + ".ipynb"
-            )
+            ):
+                notebooks_to_merge.append(
+                    viz_path
+                    + "general_"
+                    + monitoring_element.lower().replace(" ", "_")
+                    + ".ipynb"
+                )
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
             for monitoring_part in [
