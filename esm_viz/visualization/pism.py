@@ -23,7 +23,7 @@ def plot_timeseries(config):
     return_list = []
     for variable in config["pism"]["Timeseries"]:
         ds = xr.open_dataset(
-            file_dir + expid + "_pismr_timeseries_" + variable + ".nc",
+            file_dir + expid + "_pism_" + variable + "_timeseries.nc",
             decode_times=False,
         )
         pism_command_parts = ds.command.split()
