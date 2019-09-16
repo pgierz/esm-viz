@@ -235,7 +235,7 @@ def combine(expid, quiet):
             del config[bad_chapter]
     viz_path = module_path + "/visualization/"
     notebooks_to_merge = [viz_path + "read_config.ipynb"]
-    for monitoring_element in config["general"]:
+    for monitoring_element in config.get("general", []):
         if os.path.isfile(
             viz_path
             + "general_"
