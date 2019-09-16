@@ -127,7 +127,11 @@ def deploy(expid, quiet):
 
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
-            for monitoring_part in ["Global Timeseries", "Global Climatology"]:
+            for monitoring_part in [
+                "Global Timeseries",
+                "Global Climatology",
+                "Timeseries",
+            ]:
                 monitoring_part_script_string = monitoring_part.replace(
                     " ", "_"
                 ).lower()
@@ -246,7 +250,11 @@ def combine(expid, quiet):
             )
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
-            for monitoring_part in ["Global Timeseries", "Global Climatology"]:
+            for monitoring_part in [
+                "Global Timeseries",
+                "Global Climatology",
+                "Timeseries",
+            ]:
                 if monitoring_part in config[component]:
                     notebooks_to_merge.append(
                         viz_path

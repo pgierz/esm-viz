@@ -2,7 +2,7 @@
 user: a270077
 host: mistral.dkrz.de
 basedir: /work/ba0989/a270077/AWICM_PISM/LGM_011
-model: AWICM
+model: AWICM_PISM
 # Configuration of where the data for monitoring should be copied to on the
 # VISUALIZATION host. Note that this replaces everything up to your main user
 # directory on the supercomputer to keep the experiment trees looking as
@@ -63,6 +63,10 @@ echam:
                         file pattern: ${EXP_ID}_echam6_echam_??????.grb
 
 
-
+pism:
+    Timeseries:
+        slvol: 
+            file pattern: ${EXP_ID}_pismr_timeseries_*-*.nc
+        
 custom_notebooks:
         - /home/csys/pgierz/custom_monitoring/OASIS_Fields.ipynb

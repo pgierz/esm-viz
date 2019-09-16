@@ -12,6 +12,7 @@ MODEL_COMPONENTS = {
     "AWICM": ["echam", "jsbach", "hdmodel", "fesom"],
     "MPIESM": ["echam", "jsbach", "hdmodel", "mpiom"],
     "COSMOS": ["echam", "jsbach,", "hdmodel", "mpiom"],
+    "AWICM_PISM": ["echam", "jsbach", "hdmodel", "fesom", "pism"],
     "PISM_STANDALONE": ["pism"],
 }
 
