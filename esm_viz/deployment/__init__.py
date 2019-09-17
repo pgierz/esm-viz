@@ -186,7 +186,7 @@ def deploy_keypair(user, host):
 
     Returns
     -------
-        The public key filepath on **this** computer
+        The private key filepath on **this** computer
     """
     priv_file = os.path.join(
         os.environ.get("HOME"), ".config", "esm_viz", "keys", "%s_%s" % (user, host)
@@ -210,8 +210,8 @@ def deploy_keypair(user, host):
         pub_key = esm_viz_pub_key.read()
     with sftp.open(known_hosts_remote, "a+") as r_known_hosts:
         r_known_hosts.write(pub_key)
-    # Give back the path of the public key for further use:
-    return priv_file + ".pub"
+    # Give back the path of the private key for further use:
+    return priv_file
 
 
 class Simulation_Monitor(object):
