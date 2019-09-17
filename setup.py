@@ -3,25 +3,29 @@
 
 """The setup script."""
 import os
+import sys
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
 
 def show_messages():
-    print("Install is now complete. Please be aware of the following:")
+    print("Install is now complete. Please be aware of the following:", sys.stderr)
     print(
-        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
+        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:",
+        sys.stderr,
     )
-    print(os.path.join(os.environ.get("HOME"), ".local/bin"))
+    print(os.path.join(os.environ.get("HOME"), ".local/bin"), sys.stderr)
     print(
-        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
+        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:",
+        sys.stderr,
     )
-    print("PATH=${whatever_prefix_you_used}/bin:$PATH")
+    print("PATH=${whatever_prefix_you_used}/bin:$PATH", sys.stderr)
     print(
-        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
+        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages",
+        sys.stderr,
     )
-    print("\nThank you for installing esm_viz!")
+    print("\nThank you for installing esm_viz!", sys.stderr)
 
 
 class PostDevelopCommand(develop):
