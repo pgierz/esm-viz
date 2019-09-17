@@ -4,26 +4,27 @@
 """The setup script."""
 import os
 import sys
+import logging
 from setuptools import setup, find_packages
+
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+log = logging.getLogger()
 
 
 def show_messages():
-    print("Install is now complete. Please be aware of the following:", sys.stderr)
-    print(
-        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:",
-        sys.stderr,
+    log.info("Install is now complete. Please be aware of the following:")
+    log.info(
+        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
     )
-    print(os.path.join(os.environ.get("HOME"), ".local/bin"), sys.stderr)
-    print(
-        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:",
-        sys.stderr,
+    log.info(os.path.join(os.environ.get("HOME"), ".local/bin"))
+    log.info(
+        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
     )
-    print("PATH=${whatever_prefix_you_used}/bin:$PATH", sys.stderr)
-    print(
-        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages",
-        sys.stderr,
+    log.info("PATH=${whatever_prefix_you_used}/bin:$PATH")
+    log.info(
+        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
     )
-    print("\nThank you for installing esm_viz!", sys.stderr)
+    log.info("\nThank you for installing esm_viz!")
 
 
 with open("README.rst") as readme_file:
