@@ -293,6 +293,8 @@ class Simulation_Monitor(object):
             if not os.path.isfile(priv_file):
                 generate_keypair(self.user, self.host)
                 self.pkey = deploy_keypair(self.user, self.host)
+            else:
+                self.pkey = priv_file
             self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
