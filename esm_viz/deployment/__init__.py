@@ -133,7 +133,7 @@ def get_password_for_machine(user, host):
     """
     print("To set up simulation monitoring for %s, I need to know your password" % host)
     print("Don't worry, it will not be stored to disk.")
-    passprompt = "Please enter the password for %s@%s" % (user, host)
+    passprompt = "Please enter the password for %s@%s: " % (user, host)
     return getpass.getpass(prompt=passprompt)
 
 
@@ -280,7 +280,7 @@ class Simulation_Monitor(object):
         self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
             generate_keypair(self.host, self.user)
-            self.public_keyfile = deploy_keypair(self.host, self.user)
+            self.public_keyfile = deploy_keypair(self.user, self.host)
             self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
