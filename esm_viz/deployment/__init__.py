@@ -476,7 +476,7 @@ class Simulation_Monitor(object):
                 logging.info(tag)
                 for line in stream.readlines():
                     logging.info(line)
-            except OSError:
+            except (OSError, IOError):
                 logging.info("Couldn't open %s", tag)
         self.ssh.close()
 
