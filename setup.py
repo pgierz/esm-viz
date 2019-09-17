@@ -12,19 +12,19 @@ log = logging.getLogger()
 
 
 def show_messages():
-    log.info("Install is now complete. Please be aware of the following:")
-    log.info(
+    log.error("Install is now complete. Please be aware of the following:")
+    log.error(
         "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
     )
-    log.info(os.path.join(os.environ.get("HOME"), ".local/bin"))
-    log.info(
+    log.error(os.path.join(os.environ.get("HOME"), ".local/bin"))
+    log.error(
         "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
     )
-    log.info("PATH=${whatever_prefix_you_used}/bin:$PATH")
-    log.info(
+    log.error("PATH=${whatever_prefix_you_used}/bin:$PATH")
+    log.error(
         "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
     )
-    log.info("\nThank you for installing esm_viz!")
+    log.error("\nThank you for installing esm_viz!")
 
 
 with open("README.rst") as readme_file:
