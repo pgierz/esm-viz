@@ -157,6 +157,8 @@ def generate_keypair(user, host):
     keypath = os.path.join(
         os.environ.get("HOME"), ".config", "esm_viz", "keys", "%s_%s" % (user, host)
     )
+    if not os.path.isdir(os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys")):
+        os.makedirs(os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys"))
     # Private Key:
     priv.write_private_key_file(keypath)
     # Public Key
