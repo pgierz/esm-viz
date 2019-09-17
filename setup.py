@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
+import atexit
 import os
 import sys
 import logging
@@ -80,4 +81,5 @@ setup(
     version="0.9.5",
     zip_safe=False,
 )
-show_messages()
+
+atexit.register(show_messages)
