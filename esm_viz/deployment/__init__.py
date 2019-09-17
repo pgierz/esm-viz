@@ -279,7 +279,7 @@ class Simulation_Monitor(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
-            generate_keypair(self.host, self.user)
+            generate_keypair(self.user, self.host)
             self.public_keyfile = deploy_keypair(self.user, self.host)
             self._using_esm_viz_key = True
 
