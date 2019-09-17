@@ -204,7 +204,7 @@ def deploy_keypair(user, host):
     sftp = client.open_sftp()
     # If HOME isn't set....oh well...
     _, stdout, _ = client.exec_command("echo $HOME")
-    remote_home = stdout.read()[0].strip()
+    remote_home = stdout.readlines()[0].strip()
     known_hosts_remote = os.path.join(remote_home, ".ssh/known_hosts")
     with open(priv_file + ".pub", "r") as esm_viz_pub_key:
         pub_key = esm_viz_pub_key.read()
