@@ -5,8 +5,6 @@
 import os
 import sys
 from setuptools import setup, find_packages
-from setuptools.command.develop import develop
-from setuptools.command.install import install
 
 
 def show_messages():
@@ -26,23 +24,6 @@ def show_messages():
         sys.stderr,
     )
     print("\nThank you for installing esm_viz!", sys.stderr)
-
-
-class PostDevelopCommand(develop):
-    """Post-installation for development mode."""
-
-    def run(self):
-        show_messages()
-        develop.run(self)
-
-
-class PostInstallCommand(install):
-    """Post-installation for installation mode."""
-
-    def run(self):
-        # PUT YOUR POST-INSTALL SCRIPT HERE or CALL A FUNCTION
-        show_messages()
-        install.run(self)
 
 
 with open("README.rst") as readme_file:
@@ -97,5 +78,5 @@ setup(
     url="https://github.com/pgierz/esm_viz",
     version="0.9.5",
     zip_safe=False,
-    cmdclass={"develop": PostDevelopCommand, "install": PostInstallCommand},
 )
+show_messages()
