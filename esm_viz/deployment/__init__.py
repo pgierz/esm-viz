@@ -50,6 +50,12 @@ import paramiko
 # wat?
 from esm_viz import esm_viz
 
+# Py2 Py3 Fix: this has implications for the actual type of IO error, but...OK
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def rexists(sftp, path):
     """
@@ -127,7 +133,7 @@ def get_password_for_machine(user, host):
     """
     print("To set up simulation monitoring for %s, I need to know your password" % host)
     print("Don't worry, it will not be stored to disk.")
-    passprompt = "Please enter the password for %s@%s" % (user, host)
+    passprompt = "Please enter the password for %s@%s: " % (user, host)
     return getpass.getpass(prompt=passprompt)
 
 
@@ -151,6 +157,10 @@ def generate_keypair(user, host):
     keypath = os.path.join(
         os.environ.get("HOME"), ".config", "esm_viz", "keys", "%s_%s" % (user, host)
     )
+    if not os.path.isdir(
+        os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys")
+    ):
+        os.makedirs(os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys"))
     # Private Key:
     priv.write_private_key_file(keypath)
     # Public Key
@@ -271,8 +281,8 @@ class Simulation_Monitor(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
-            generate_keypair(self.host, self.user)
-            self.public_keyfile = deploy_keypair(self.host, self.user)
+            generate_keypair(self.user, self.host)
+            self.public_keyfile = deploy_keypair(self.user, self.host)
             self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
@@ -473,7 +483,7 @@ class Simulation_Monitor(object):
                 logging.info(tag)
                 for line in stream.readlines():
                     logging.info(line)
-            except OSError:
+            except (OSError, IOError):
                 logging.info("Couldn't open %s", tag)
         self.ssh.close()
 
