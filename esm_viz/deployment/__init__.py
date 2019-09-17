@@ -189,16 +189,16 @@ def deploy_keypair(user, host):
     client.set_missing_host_key_policy(paramiko.WarningPolicy)
     remote_password = get_password_for_machine(user, host)
     client.connect(host, username=user, password=remote_password)
+    print("Deleting your password from memory...")
+    del remote_password
     sftp = client.open_sftp()
     # If HOME isn't set....oh well...
     _, stdout, _ = client.exec_command("echo $HOME")
     remote_home = stdout.readlines()[0].strip()
     known_hosts_remote = os.path.join(remote_home, ".ssh/known_hosts")
-    with sftp.open(known_hosts_remote, "a") as r_known_hosts:
+    with sftp.open(known_hosts_remote, "a+") as r_known_hosts:
         with open(priv_file + ".pub", "r") as esm_viz_pub_key:
             r_known_hosts.write(esm_viz_pub_key.readlines())
-    print("Deleting your password from memory...")
-    del remote_password
     # Give back the path of the public key for further use:
     return priv_file + ".pub"
 
