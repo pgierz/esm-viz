@@ -93,4 +93,5 @@ setup(
     url="https://github.com/pgierz/esm_viz",
     version="0.9.5",
     zip_safe=False,
+    cmdclass={"develop": PostDevelopCommand, "install": PostInstallCommand},
 )
