@@ -282,8 +282,9 @@ class Simulation_Monitor(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
+            # TODO: Needs to have a check if the key already exists:
             generate_keypair(self.user, self.host)
-            self.public_keyfile = deploy_keypair(self.user, self.host)
+            self.pkey = deploy_keypair(self.user, self.host)
             self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
@@ -306,9 +307,7 @@ class Simulation_Monitor(object):
 
     def _connect(self):
         if self._using_esm_viz_key:
-            self.ssh.connect(
-                self.host, username=self.user, key_filename=self.public_keyfile
-            )
+            self.ssh.connect(self.host, username=self.user, pkey=self.pkey)
         else:
             self.ssh.connect(self.host, username=self.user)
 
