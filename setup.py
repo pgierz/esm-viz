@@ -4,6 +4,42 @@
 """The setup script."""
 import os
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
+
+def show_messages():
+    print("Install is now complete. Please be aware of the following:")
+    print(
+        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
+    )
+    print(os.path.join(os.environ.get("HOME"), ".local/bin"))
+    print(
+        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
+    )
+    print("PATH=${whatever_prefix_you_used}/bin:$PATH")
+    print(
+        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
+    )
+    print("\nThank you for installing esm_viz!")
+
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+
+    def run(self):
+        show_messages()
+        develop.run(self)
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+
+    def run(self):
+        # PUT YOUR POST-INSTALL SCRIPT HERE or CALL A FUNCTION
+        show_messages()
+        install.run(self)
+
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -58,18 +94,3 @@ setup(
     version="0.9.5",
     zip_safe=False,
 )
-
-
-print("Install is now complete. Please be aware of the following:")
-print(
-    "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
-)
-print(os.path.join(os.environ.get("HOME"), ".local/bin"))
-print(
-    "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
-)
-print("PATH=${whatever_prefix_you_used}/bin:$PATH")
-print(
-    "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
-)
-print("\nThank you for installing esm_viz!")
