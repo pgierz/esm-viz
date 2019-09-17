@@ -206,9 +206,10 @@ def deploy_keypair(user, host):
     _, stdout, _ = client.exec_command("echo $HOME")
     remote_home = stdout.readlines()[0].strip()
     known_hosts_remote = os.path.join(remote_home, ".ssh/known_hosts")
+    with open(priv_file + ".pub", "r") as esm_viz_pub_key:
+        pub_key = esm_viz_pub_key.readlines()
     with sftp.open(known_hosts_remote, "a+") as r_known_hosts:
-        with open(priv_file + ".pub", "r") as esm_viz_pub_key:
-            r_known_hosts.write(esm_viz_pub_key.readlines())
+        r_known_hosts.write(pub_key)
     # Give back the path of the public key for further use:
     return priv_file + ".pub"
 
