@@ -158,7 +158,9 @@ def generate_keypair(user, host):
     keypath = os.path.join(
         os.environ.get("HOME"), ".config", "esm_viz", "keys", "%s_%s" % (user, host)
     )
-    if not os.path.isdir(os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys")):
+    if not os.path.isdir(
+        os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys")
+    ):
         os.makedirs(os.path.join(os.environ.get("HOME"), ".config", "esm_viz", "keys"))
     # Private Key:
     priv.write_private_key_file(keypath)
@@ -185,7 +187,7 @@ def deploy_keypair(user, host):
 
     Returns
     -------
-        The public key filepath on **this** computer
+        The private key filepath on **this** computer
     """
     priv_file = os.path.join(
         os.environ.get("HOME"), ".config", "esm_viz", "keys", "%s_%s" % (user, host)
@@ -198,18 +200,19 @@ def deploy_keypair(user, host):
     client.set_missing_host_key_policy(paramiko.WarningPolicy)
     remote_password = get_password_for_machine(user, host)
     client.connect(host, username=user, password=remote_password)
+    print("Deleting your password from memory...")
+    del remote_password
     sftp = client.open_sftp()
     # If HOME isn't set....oh well...
     _, stdout, _ = client.exec_command("echo $HOME")
     remote_home = stdout.readlines()[0].strip()
-    known_hosts_remote = os.path.join(remote_home, ".ssh/known_hosts")
-    with sftp.open(known_hosts_remote, "w") as r_known_hosts:
-        with open(priv_file + ".pub", "r") as esm_viz_pub_key:
-            r_known_hosts.write(esm_viz_pub_key.readlines())
-    print("Deleting your password from memory...")
-    del remote_password
-    # Give back the path of the public key for further use:
-    return priv_file + ".pub"
+    known_hosts_remote = os.path.join(remote_home, ".ssh/authorized_keys")
+    with open(priv_file + ".pub", "r") as esm_viz_pub_key:
+        pub_key = esm_viz_pub_key.read()
+    with sftp.open(known_hosts_remote, "a+") as r_known_hosts:
+        r_known_hosts.write(pub_key)
+    # Give back the path of the private key for further use:
+    return priv_file
 
 
 class Simulation_Monitor(object):
@@ -280,8 +283,19 @@ class Simulation_Monitor(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._using_esm_viz_key = False
         if not self._can_login_to_host_without_password():
-            generate_keypair(self.user, self.host)
-            self.public_keyfile = deploy_keypair(self.user, self.host)
+            # TODO: Needs to have a check if the key already exists:
+            priv_file = os.path.join(
+                os.environ.get("HOME"),
+                ".config",
+                "esm_viz",
+                "keys",
+                "%s_%s" % (user, host),
+            )
+            if not os.path.isfile(priv_file):
+                generate_keypair(self.user, self.host)
+                self.pkey = deploy_keypair(self.user, self.host)
+            else:
+                self.pkey = priv_file
             self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
@@ -304,9 +318,9 @@ class Simulation_Monitor(object):
 
     def _connect(self):
         if self._using_esm_viz_key:
-            self.ssh.connect(
-                self.host, user=self.user, key_filename=self.public_keyfile
-            )
+            actual_pkey = paramiko.RSAKey.from_private_key_file(self.pkey)
+            self.ssh.connect(self.host, username=self.user, pkey=actual_pkey)
+            del actual_pkey  # PG: Might be save. Dunno. I'm not a network expert.
         else:
             self.ssh.connect(self.host, username=self.user)
 
