@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
-
+import os
 from setuptools import setup, find_packages
 
 with open("README.rst") as readme_file:
@@ -58,3 +58,18 @@ setup(
     version="0.9.5",
     zip_safe=False,
 )
+
+
+print("Install is now complete. Please be aware of the following:")
+print(
+    "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
+)
+print(os.path.join(os.environ.get("HOME"), ".local/bin"))
+print(
+    "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
+)
+print("PATH=${whatever_prefix_you_used}/bin:$PATH")
+print(
+    "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
+)
+print("\nThank you for installing esm_viz!")
