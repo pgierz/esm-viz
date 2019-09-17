@@ -50,6 +50,12 @@ import paramiko
 # wat?
 from esm_viz import esm_viz
 
+# Py2 Py3 Fix: this has implications for the actual type of IO error, but...OK
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def rexists(sftp, path):
     """
@@ -470,7 +476,7 @@ class Simulation_Monitor(object):
                 logging.info(tag)
                 for line in stream.readlines():
                     logging.info(line)
-            except OSError:
+            except (OSError, IOError):
                 logging.info("Couldn't open %s", tag)
         self.ssh.close()
 

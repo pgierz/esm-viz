@@ -2,6 +2,17 @@
 History
 =======
 
+Upcoming 0.9.6
+--------------
+
+* Py2/Py3 agnostic ``FileNotFoundError``
+
+* SSH Key generation
+
+* Installing with ``pip -v`` gives you a message about PATH and PYTHONPATH.
+  However, the ``-v`` is **required** for this to show up. See here:
+  https://github.com/pypa/pip/issues/2933
+
 0.9.5 (2019-09-16)
 ------------------
 Install seems to work for Chris. Dependencies still need to be more tightly controlled.
