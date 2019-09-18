@@ -2,8 +2,31 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
-
+import atexit
+import os
+import sys
+import logging
 from setuptools import setup, find_packages
+
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+log = logging.getLogger()
+
+
+def show_messages():
+    log.info("Install is now complete. Please be aware of the following:")
+    log.info(
+        "\nIf you used the --user flag in pip, you should adapt your PATH variable to include:"
+    )
+    log.info(os.path.join(os.environ.get("HOME"), ".local/bin"))
+    log.info(
+        "\nIf you used the --prefix flag in pip, you should adapt **both** you PATH and PYTHONPATH accordingly:"
+    )
+    log.info("PATH=${whatever_prefix_you_used}/bin:$PATH")
+    log.info(
+        "PYTHONPATH=${whatever_prefix_you-used}/lib/python-${your_python_version}/site-packages"
+    )
+    log.info("\nThank you for installing esm_viz!")
+
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -58,3 +81,5 @@ setup(
     version="0.9.5",
     zip_safe=False,
 )
+
+atexit.register(show_messages)
