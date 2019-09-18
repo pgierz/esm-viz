@@ -319,7 +319,7 @@ class Simulation_Monitor(object):
         if self._using_esm_viz_key:
             actual_pkey = paramiko.RSAKey.from_private_key_file(self.pkey)
             self.ssh.connect(self.host, username=self.user, pkey=actual_pkey)
-            del actual_pkey  # PG: Might be save. Dunno. I'm not a network expert.
+            del actual_pkey  # PG: Might be safe. Dunno. I'm not a network expert.
         else:
             self.ssh.connect(self.host, username=self.user)
 

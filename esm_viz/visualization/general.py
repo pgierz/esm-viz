@@ -36,6 +36,10 @@ import pandas as pd
 import paramiko
 
 
+# Import from this class (please let this work)
+from ..deployment import Simulation_Monitor
+
+
 SLURM_QUEUE_COMMAND = (
     r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
 )
@@ -69,39 +73,86 @@ def stripComments(code):
     return re.sub(r"(?m) *#.*\n?", "", code)
 
 
-def queue_info(username, host, verbose=True):
-    """
-    Gets Batch Scheduler queueing information
+# NOTE (PG): Since the initialization is almost idential, it's probably a good
+# idea to eventually move this to be a subclass of SimulationMonitor
 
-    Parameters
-    ----------
-    config : dict
-        A dictionary containing the configuration used for your experiment,
-        read from the YAML file.
 
-    Returns
-    -------
-    queue_df or None : pd.DataFrame
-        A DataFrame containing the queue information, or None if the queue for
-        your user is empty.
-    """
-    queue_check_cmd = BATCH_SYSTEMS[host]
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=username)
-    _, stdout, _ = ssh.exec_command(queue_check_cmd)
-    queue_status = stdout.readlines()
-    # Either we have just the header, or nothing at all, so nothing is running,
-    # probably.
-    if len(queue_status) <= 1:
-        if verbose:
-            print("No jobs running on", host)
-        return None
-    queue_status = [l.split() for l in queue_status]
-    queue_df = pd.DataFrame(queue_status[1:])
-    queue_df.columns = queue_status[0]
-    return queue_df
+class General(Simulation_Monitor):
+    def queue_info(self, verbose=True):
+        """
+        Gets Batch Scheduler queueing information
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration used for your experiment,
+            read from the YAML file.
+
+        Returns
+        -------
+        queue_df or None : pd.DataFrame
+            A DataFrame containing the queue information, or None if the queue for
+            your user is empty.
+        """
+        queue_check_cmd = BATCH_SYSTEMS[self.host]
+        self._connect()
+        _, stdout, _ = self.ssh.exec_command(queue_check_cmd)
+        queue_status = stdout.readlines()
+        # Either we have just the header, or nothing at all, so nothing is running,
+        # probably.
+        if len(queue_status) <= 1:
+            if verbose:
+                print("No jobs running on", self.host)
+            return None
+        queue_status = [l.split() for l in queue_status]
+        queue_df = pd.DataFrame(queue_status[1:])
+        queue_df.columns = queue_status[0]
+        return queue_df
+
+    def disk_usage(self, config):
+        """
+        Gets disk usage of a particular experiment, and if possible, quota
+        information.
+
+        Parameters
+        ----------
+        config : dict
+            A dictionary containing the configuration used for your experiment,
+            read from the YAML file.
+
+        Returns
+        -------
+        exp_usage, total_usage, total_available : tuple of ints
+            Three numbers, for the usage of your particular experiment, the total
+            usage in your account or project, and the total available. The latter
+            two elements default to None if they cannot be easily determined.
+        """
+        disk_check_command = "du -sb"
+        # This part should be replaced with the self
+        self._connect()
+        _, stdout, _ = self.ssh.exec_command(
+            "cd " + config["basedir"] + ";" + disk_check_command
+        )
+        currently_used_space = float(stdout.readlines()[0].strip().replace("\t", ""))
+        if QUOTA_COMMANDS[config["host"]]:
+            _, stdout, stderr = self.ssh.exec_command(QUOTA_COMMANDS[config["host"]])
+            try:
+                errors = stderr.readlines()
+                # Dump module output. This is also idioitcally dangerous.
+                errors = [e for e in errors if ("module" not in e.lower())]
+            except:
+                # Errors couldn't be read. We will idiotically assume there were
+                # none. This is probably very dangerous and will bite me in the ass
+                # at some point.
+                errors = []
+            if errors:
+                print(errors)
+                # There were errors; you probably can't get the whole quota
+                return (currently_used_space, None, None)
+            # Let's just hope this breaks loudly:
+            quota_output = stdout.readlines()
+            return (currently_used_space,) + QUOTA_PARSERS[config["host"]](quota_output)
+        return (currently_used_space, None, None)
 
 
 def quota_parser_ollie(quota_output):
@@ -127,54 +178,6 @@ QUOTA_PARSERS = {
     "stan0.awi.de": None,
     "stan1.awi.de": None,
 }
-
-
-def disk_usage(config):
-    """
-    Gets disk usage of a particular experiment, and if possible, quota
-    information.
-
-    Parameters
-    ----------
-    config : dict
-        A dictionary containing the configuration used for your experiment,
-        read from the YAML file.
-
-    Returns
-    -------
-    exp_usage, total_usage, total_available : tuple of ints
-        Three numbers, for the usage of your particular experiment, the total
-        usage in your account or project, and the total available. The latter
-        two elements default to None if they cannot be easily determined.
-    """
-    disk_check_command = "du -sb"
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config["host"], username=config["user"])
-    _, stdout, _ = ssh.exec_command(
-        "cd " + config["basedir"] + ";" + disk_check_command
-    )
-    currently_used_space = float(stdout.readlines()[0].strip().replace("\t", ""))
-    if QUOTA_COMMANDS[config["host"]]:
-        _, stdout, stderr = ssh.exec_command(QUOTA_COMMANDS[config["host"]])
-        try:
-            errors = stderr.readlines()
-            # Dump module output. This is also idioitcally dangerous.
-            errors = [e for e in errors if ("module" not in e.lower())]
-        except:
-            # Errors couldn't be read. We will idiotically assume there were
-            # none. This is probably very dangerous and will bite me in the ass
-            # at some point.
-            errors = []
-        if errors:
-            print(errors)
-            # There were errors; you probably can't get the whole quota
-            return (currently_used_space, None, None)
-        # Let's just hope this breaks loudly:
-        quota_output = stdout.readlines()
-        return (currently_used_space,) + QUOTA_PARSERS[config["host"]](quota_output)
-    return (currently_used_space, None, None)
 
 
 def bytes2human(n):
@@ -208,6 +211,7 @@ def plot_usage(exp_usage, total_usage, total_quota):
         display(HTML("This experiment uses %s space" % bytes2human(exp_usage)))
 
 
+# TODO
 def get_log_output(config, esm_style=True):
     exp_path = config["basedir"]
     model_name = config["model"].lower()
@@ -345,6 +349,7 @@ def progress_bar(config):
         + str(np.round(years_per_day, 2))
         + "runs/day"
     )
+    # FIXME
     from tqdm import tqdm_notebook
 
     pbar = tqdm_notebook(

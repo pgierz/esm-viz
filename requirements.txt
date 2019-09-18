@@ -12,3 +12,4 @@ paramiko
 python-crontab
 pyyaml
 xarray
+panel
