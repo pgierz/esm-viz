@@ -317,6 +317,11 @@ class Simulation_Monitor(object):
                 else:
                     self.pkey = priv_file
                 self._using_esm_viz_key = True
+                logging.info("Using esm_viz specific keys")
+            else:
+                logging.info("You can already log in without a password")
+        else:
+            logging.info("You will be prompted for your password!")
 
     def _can_login_to_host_without_password(self):
         """
