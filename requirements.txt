@@ -15,5 +15,6 @@ paramiko
 pillow>=4.0
 python-crontab
 pyyaml
+tornado>=5.0
 tqdm
 xarray
