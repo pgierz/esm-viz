@@ -8,8 +8,9 @@ nbformat
 nbmerge
 numpy>=1.12
 pandas>=0.19.2
+panel
 paramiko
 python-crontab
 pyyaml
+tqdm
 xarray
-panel
