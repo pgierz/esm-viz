@@ -26,6 +26,8 @@ import esm_viz
 from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS, get_bindir
 from .visualization.nbmerge import merge_notebooks
+import esm_viz.visualization.general
+
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
