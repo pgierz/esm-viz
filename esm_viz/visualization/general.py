@@ -20,9 +20,6 @@ import datetime
 import re
 import os
 
-# Third-Party Packages
-from IPython.core.display import display, HTML
-from IPython.display import display_html
 
 # PG: Not sure if I like importing matplotlib so often, could probably be
 # simpler..
