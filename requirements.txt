@@ -12,6 +12,7 @@ numpy>=1.12
 pandas>=0.19.2
 panel
 paramiko
+pillow>=4.0
 python-crontab
 pyyaml
 tqdm
