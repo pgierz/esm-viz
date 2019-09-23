@@ -11,7 +11,6 @@ import geoviews as gv
 import panel as pn
 import cmocean
 
-from IPython.core.display import display, HTML
 
 from esm_viz.visualization import get_local_storage_dir_from_config
 
