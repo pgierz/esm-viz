@@ -115,8 +115,8 @@ def bytes2human(n):
 
 
 class GeneralPanel(Simulation_Monitor):
-    def render_pane(self, config, use_password=True):
-        general = General.from_config(config, use_password)
+    def render_pane(self, config):
+        general = General.from_config(config)
         log = Logfile(general.get_log_output(config))
 
         General_Tabs = []
