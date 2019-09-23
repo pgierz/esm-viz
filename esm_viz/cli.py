@@ -27,7 +27,6 @@ from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS, get_bindir
 from .visualization.nbmerge import merge_notebooks
 from .visualization import general
-from esm_viz.visualization.general import GeneralPanel
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
@@ -236,7 +235,7 @@ def combine(expid, quiet):
     tab_list = []
     if "general" in config:
         logging.info("Setting up general monitoring")
-        general_mon = GeneralPanel.from_config(config)
+        general_mon = general.GeneralPanel.from_config(config)
         tab_list.append(("General", general_mon.render_pane(config)))
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
