@@ -11,6 +11,13 @@ import inspect
 import logging
 import time
 
+# First thing before any pf the specific modules are imported, set up a working
+# mpl backend:
+import matplotlib
+
+matplotlib.use("AGG")
+
+
 import click
 from crontab import CronTab
 
