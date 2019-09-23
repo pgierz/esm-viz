@@ -258,7 +258,14 @@ class Simulation_Monitor(object):
     """
 
     def __init__(
-        self, user, host, basedir, coupling, storage_prefix, required_modules=[]
+        self,
+        user,
+        host,
+        basedir,
+        coupling,
+        storage_prefix,
+        required_modules=[],
+        use_password=False,
     ):
         """
         Initializes a new monitoring object.
@@ -281,21 +288,23 @@ class Simulation_Monitor(object):
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._using_esm_viz_key = False
-        if not self._can_login_to_host_without_password():
-            # TODO: Needs to have a check if the key already exists:
-            priv_file = os.path.join(
-                os.environ.get("HOME"),
-                ".config",
-                "esm_viz",
-                "keys",
-                "%s_%s" % (user, host),
-            )
-            if not os.path.isfile(priv_file):
-                generate_keypair(self.user, self.host)
-                self.pkey = deploy_keypair(self.user, self.host)
-            else:
-                self.pkey = priv_file
-            self._using_esm_viz_key = True
+        self._use_password = use_password
+        if not self._use_password:
+            if not self._can_login_to_host_without_password():
+                # TODO: Needs to have a check if the key already exists:
+                priv_file = os.path.join(
+                    os.environ.get("HOME"),
+                    ".config",
+                    "esm_viz",
+                    "keys",
+                    "%s_%s" % (user, host),
+                )
+                if not os.path.isfile(priv_file):
+                    generate_keypair(self.user, self.host)
+                    self.pkey = deploy_keypair(self.user, self.host)
+                else:
+                    self.pkey = priv_file
+                self._using_esm_viz_key = True
 
     def _can_login_to_host_without_password(self):
         """
@@ -320,6 +329,12 @@ class Simulation_Monitor(object):
             actual_pkey = paramiko.RSAKey.from_private_key_file(self.pkey)
             self.ssh.connect(self.host, username=self.user, pkey=actual_pkey)
             del actual_pkey  # PG: Might be safe. Dunno. I'm not a network expert.
+        elif self._use_password:
+            rpass = getpass.getpass(
+                prompt="Password for %s@%s: " % (self.user, self.host)
+            )
+            self.ssh.connect(self.host, username=self.user, password=rpass)
+            del rpass
         else:
             self.ssh.connect(self.host, username=self.user)
 

@@ -35,6 +35,8 @@ import numpy as np
 import pandas as pd
 import paramiko
 
+from tqdm.auto import tqdm
+
 
 # Import from this class (please let this work)
 from ..deployment import Simulation_Monitor
@@ -68,16 +70,53 @@ QUOTA_COMMANDS = {
 }
 
 
+def quota_parser_ollie(quota_output):
+    """ A specialized quota parser for ollie. Has hopefully sensible error handling"""
+    try:
+        used = [l.split(":")[-1].strip().split(" ") for l in quota_output]
+        quota_used_TB = float(used[1][0])
+        quota_available_TB = float(used[1][4])
+        return quota_used_TB * 10 ** 12, quota_available_TB * 10 ** 12
+    # PG: I'd like to have a more general error here:
+    except IndexError:
+        # Something probably changed with Malte's quota program. You get
+        # nothing back, twice; the "normal" behaviour also gives you back
+        # a 2-element tuple.
+        return (None, None)
+
+
+QUOTA_PARSERS = {
+    "mistral.dkrz.de": None,
+    "ollie0.awi.de": quota_parser_ollie,
+    "ollie1.awi.de": quota_parser_ollie,
+    "juwels.fz-juelich.de": None,
+    "stan0.awi.de": None,
+    "stan1.awi.de": None,
+}
+
+
 def stripComments(code):
     code = str(code)
     return re.sub(r"(?m) *#.*\n?", "", code)
 
 
-# NOTE (PG): Since the initialization is almost idential, it's probably a good
-# idea to eventually move this to be a subclass of SimulationMonitor
+def bytes2human(n):
+    symbols = ("K", "M", "G", "T", "P", "E", "Z", "Y")
+    prefix = {}
+    for i, s in enumerate(symbols):
+        prefix[s] = 1 << (i + 1) * 10
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            value = float(n) / prefix[s]
+            return "%.3f%s" % (value, s)
+    return "%sB" % n
 
 
 class General(Simulation_Monitor):
+    @classmethod
+    def from_config(cls, config):
+        pass
+
     def queue_info(self, verbose=True):
         """
         Gets Batch Scheduler queueing information
@@ -108,6 +147,20 @@ class General(Simulation_Monitor):
         queue_df = pd.DataFrame(queue_status[1:])
         queue_df.columns = queue_status[0]
         return queue_df
+
+    def get_log_output(self, config, esm_style=True):
+        exp_path = self.basedir  # config["basedir"]
+        model_name = config["model"].lower()
+        self._connect()
+        expid = exp_path.split("/")[-1]
+        if esm_style:
+            log_file = (
+                exp_path + "/scripts/" + expid + "_" + model_name + "_compute.log"
+            )
+        else:
+            log_file = exp_path + "/scripts/" + expid + ".log"
+        stdin, stdout, stderr = self.ssh.exec_command("cat " + log_file)
+        return stdout.readlines()
 
     def disk_usage(self, config):
         """
@@ -154,474 +207,134 @@ class General(Simulation_Monitor):
             return (currently_used_space,) + QUOTA_PARSERS[config["host"]](quota_output)
         return (currently_used_space, None, None)
 
-
-def quota_parser_ollie(quota_output):
-    """ A specialized quota parser for ollie. Has hopefully sensible error handling"""
-    try:
-        used = [l.split(":")[-1].strip().split(" ") for l in quota_output]
-        quota_used_TB = float(used[1][0])
-        quota_available_TB = float(used[1][4])
-        return quota_used_TB * 10 ** 12, quota_available_TB * 10 ** 12
-    # PG: I'd like to have a more general error here:
-    except IndexError:
-        # Something probably changed with Malte's quota program. You get
-        # nothing back, twice; the "normal" behaviour also gives you back
-        # a 2-element tuple.
-        return (None, None)
-
-
-QUOTA_PARSERS = {
-    "mistral.dkrz.de": None,
-    "ollie0.awi.de": quota_parser_ollie,
-    "ollie1.awi.de": quota_parser_ollie,
-    "juwels.fz-juelich.de": None,
-    "stan0.awi.de": None,
-    "stan1.awi.de": None,
-}
-
-
-def bytes2human(n):
-    symbols = ("K", "M", "G", "T", "P", "E", "Z", "Y")
-    prefix = {}
-    for i, s in enumerate(symbols):
-        prefix[s] = 1 << (i + 1) * 10
-    for s in reversed(symbols):
-        if n >= prefix[s]:
-            value = float(n) / prefix[s]
-            return "%.3f%s" % (value, s)
-    return "%sB" % n
-
-
-def plot_usage(exp_usage, total_usage, total_quota):
-    if total_usage and total_quota:
-        total_free = total_quota - total_usage
-        total_not_this_exp = total_usage - exp_usage
-        f, ax = plt.subplots(1, 1, dpi=150, figsize=(2.5, 2.5))
-        ax.pie(
-            [exp_usage, total_not_this_exp, total_free],
-            colors=["lightblue", "lightgray", "white"],
-            labels=["This Exp", "Other Storage", "Free"],
-            autopct="%1.1f%%",
-            shadow=True,
-            startangle=90,
-            explode=(0.1, 0, 0),
-            textprops={"fontsize": 5},
-        )
-    else:
-        display(HTML("This experiment uses %s space" % bytes2human(exp_usage)))
-
-
-# TODO
-def get_log_output(config, esm_style=True):
-    exp_path = config["basedir"]
-    model_name = config["model"].lower()
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config["host"], username=config["user"])
-    expid = exp_path.split("/")[-1]
-    if esm_style:
-        log_file = exp_path + "/scripts/" + expid + "_" + model_name + "_compute.log"
-    else:
-        log_file = exp_path + "/scripts/" + expid + ".log"
-    stdin, stdout, stderr = ssh.exec_command("cat " + log_file)
-    return stdout.readlines()
-
-
-def generate_dataframe_from_esm_logfile(log):
-    df = pd.DataFrame([l.split(" : ") for l in log], columns=["Date", "Message"])
-    df2 = df["Message"].str.split(expand=True)
-    # We drop the first row since it says "Start of Experiment"
-    log_df = pd.concat([df[1:]["Date"], df2[1:]], axis=1)
-    log_df.columns = ["Date", "Run Number", "Exp Date", "Job ID", "Seperator", "State"]
-    log_df.drop("Seperator", axis=1, inplace=True)
-    log_df.set_index("Date", inplace=True)
-    log_df.index = pd.to_datetime(log_df.index)
-    return log_df
-
-
-def generate_dataframe_from_mpimet_logfile(log):
-    log_df = pd.read_table(
-        log,
-        sep=r" :  | -",
-        skiprows=1,
-        infer_datetime_format=True,
-        names=["Date", "Message", "State"],
-        engine="python",
-        index_col=0,
-    )
-    middle_column = log_df["Message"].apply(lambda x: pd.Series(str(x).split()))
-    log_df.drop("Message", axis=1, inplace=True)
-    middle_column.columns = ["Run Number", "Exp Date", "Job ID"]
-    log_df = pd.concat([log_df, middle_column], axis=1)
-    log_df.set_index(pd.to_datetime(log_df.index), inplace=True)
-    return log_df
-
-
-def compute_throughput(log_df):
-    starts = log_df[log_df.State.str.contains("start")]
-    ends = log_df[log_df.State.str.contains("done")]
-    # Drop the duplicated starts:
-    starts.drop_duplicates(subset="Run Number", keep="last", inplace=True)
-    merged = pd.concat([starts, ends])
-    groupby = merged.groupby("Run Number")
-    run_diffs = {"Run Number": [], "Wall Time": [], "Queue Time": []}
-    for name, group in groupby:
-        if int(name) > 1:
-            previous_group = groupby.get_group(str(int(name) - 1))
-            run_diffs["Queue Time"].append(group.index[0] - previous_group.index[-1])
-        else:
-            run_diffs["Queue Time"].append(datetime.timedelta(0))
-        run_diffs["Run Number"].append(int(name))
-        run_diffs["Wall Time"].append(group.index[-1] - group.index[0])
-    diffs = pd.DataFrame(run_diffs).sort_values("Run Number").set_index("Run Number")
-    DAY = datetime.timedelta(1)
-    throughput = DAY / diffs.mean()
-    return diffs.mean(), throughput, diffs
-
-
-def progress_bar(config):
-    log = get_log_output(config)
-    log_df = generate_dataframe_from_esm_logfile(log)
-    diffs = compute_throughput(log_df)[2]
-    throughput = datetime.timedelta(1) / diffs["Wall Time"].mean()
-    exp = config["basedir"]
-    model = config["model"].lower()
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(config["host"], username=config["user"])
-    date_filename = exp.split("/")[-1] + "_" + model + ".date"
-    remote_command = (
-        "cd "
-        + config["basedir"]
-        + "/scripts/; cat "
-        + date_filename
-        + " |awk '{ print $1 }'"
-    )
-    stdin, stdout, stderr = client.exec_command(remote_command)
-    # stdout is now something like 19500101
-    # Assume that you get something like Y*YMMDD; so cut off the last 4 digits
-    # (note that we dont know how many places the year has; so we need to cut
-    # from the end)
-    current_date = int(stdout.readlines()[0][:-5])
-
-    remote_command = (
-        "cd "
-        + config["basedir"]
-        + "/scripts/; cat "
-        + date_filename
-        + " |awk '{ print $2 }'"
-    )
-    stdin, stdout, stderr = client.exec_command(remote_command)
-    current_run = int(stdout.readlines()[0])
-
-    runscript_file = config.get("runscript", config["basedir"] + "/scripts/*run")
-    # POTENTIAL BUG: These things are all very dependent on the runscript's way
-    # of defining time control. It might be better to do this somehow
-    # differently
-    start_year = client.exec_command(
-        "grep INITIAL_DATE_" + model + " " + runscript_file
-    )[1].readlines()[0]
-    final_year = client.exec_command("grep FINAL_DATE_" + model + " " + runscript_file)[
-        1
-    ].readlines()[0]
-    # POTENTIAL BUG: What about people who run on monthly basis?
-    run_size = client.exec_command("grep NYEAR_" + model + " " + runscript_file)[
-        1
-    ].readlines()[0]
-    # Reformat to get just the years and run sizes
-    start_year = int(start_year.split("=")[1].split("-")[0])
-    final_year = int(final_year.split("=")[1].split("-")[0])
-    run_size = int(stripComments(" ".join(run_size.split("=")[1].split())))
-
-    total_number_of_runs = int((final_year - start_year) / run_size)
-    years_per_day = throughput
-
-    years_left = final_year - current_date
-    days_left = years_left / years_per_day
-    finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
-    r_bar = (
-        " "
-        + str(current_run)
-        + "/"
-        + str(total_number_of_runs)
-        + ", Throughput ~"
-        + str(np.round(years_per_day, 2))
-        + "runs/day"
-    )
-    # FIXME
-    from tqdm import tqdm_notebook
-
-    pbar = tqdm_notebook(
-        total=total_number_of_runs,
-        desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
-        bar_format="{n}/|/{l_bar} " + r_bar,
-    )
-    pbar.update(current_run)
-    pbar.close()
-
-
-def simulation_timeline(config):
-    log = get_log_output(config)
-    log_df = generate_dataframe_from_esm_logfile(log)
-    # Drop the last entry if it's start
-    if "start" in log_df.iloc[-1]["State"]:
-        end_of_log = log_df.iloc[:-1].tail(30)
-    else:
-        end_of_log = log_df.tail(30)
-    end_groups = end_of_log.groupby("Run Number")
-    f, ax = plt.subplots(1, 1, dpi=150, figsize=(15, 1.5))
-    for name, group in end_groups:
-        try:
-            bdate = group.index[0]
-            edate = group.index[1]
-        except IndexError:
-            print("Sorry, couldn't make a timeline")
+    def plot_usage(self, config):
+        exp_usage, total_usage, total_quota = self.disk_usage(config)
+        if total_usage and total_quota:
+            total_free = total_quota - total_usage
+            total_not_this_exp = total_usage - exp_usage
+            f, ax = plt.subplots(1, 1, dpi=150, figsize=(2.5, 2.5))
+            ax.pie(
+                [exp_usage, total_not_this_exp, total_free],
+                colors=["lightblue", "lightgray", "white"],
+                labels=["This Exp", "Other Storage", "Free"],
+                autopct="%1.1f%%",
+                shadow=True,
+                startangle=90,
+                explode=(0.1, 0, 0),
+                textprops={"fontsize": 5},
+            )
             plt.close(f)
-            return
-        edate, bdate = [mdates.date2num(item) for item in (edate, bdate)]
-        # The color is the same as the progressbar below, use the colormeter to figure it out.
-        ax.barh(
-            0,
-            edate - bdate,
-            left=bdate,
-            height=0.2,
-            color=(217.0 / 255.0, 83.0 / 255.0, 79.0 / 255.0),
-            edgecolor="black",
-        )
-    ax.set_ylim(-0.5, 0.5)
-    for direction in ["top", "left", "right"]:
-        ax.spines[direction].set_visible(False)
-    ax.yaxis.set_visible(False)
-    ax.xaxis_date()
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M %d.%m.%y"))
-
-
-def degree_range(n):
-    start = np.linspace(0, 180, n + 1, endpoint=True)[0:-1]
-    end = np.linspace(0, 180, n + 1, endpoint=True)[1::]
-    mid_points = start + ((end - start) / 2.0)
-    return np.c_[start, end], mid_points
-
-
-def rot_text(ang):
-    rotation = np.degrees(np.radians(ang) * np.pi / np.pi - np.radians(90))
-    return rotation
-
-
-def gauge(
-    labels=["LOW", "MEDIUM", "HIGH", "VERY HIGH", "EXTREME"],
-    colors="jet_r",
-    arrow=1,
-    title="",
-    fname=False,
-):
-
-    """
-    some sanity checks first
-
-    """
-
-    N = len(labels)
-
-    if arrow > N:
-        raise Exception(
-            "\n\nThe category ({}) is greated than \
-        the length\nof the labels ({})".format(
-                arrow, N
-            )
-        )
-
-    """
-    if colors is a string, we assume it's a matplotlib colormap
-    and we discretize in N discrete colors
-    """
-
-    if isinstance(colors, str):
-        cmap = cm.get_cmap(colors, N)
-        cmap = cmap(np.arange(N))
-        colors = cmap[::-1, :].tolist()
-    if isinstance(colors, list):
-        if len(colors) == N:
-            colors = colors[::-1]
+            return f
         else:
-            raise Exception(
-                "\n\nnumber of colors {} not equal \
-            to number of categories{}\n".format(
-                    len(colors), N
-                )
-            )
+            return "This experiment uses %s space" % bytes2human(exp_usage)
 
-    """
-    begins the plotting
-    """
+    def progress_bar(self, config, log):
+        _, throughput, _ = log.compute_throughput()
 
-    fig, ax = plt.subplots()
+        exp = config["basedir"]
+        model = config["model"].lower()
+        self._connect()
+        date_filename = exp.split("/")[-1] + "_" + model + ".date"
+        remote_command = (
+            "cd "
+            + config["basedir"]
+            + "/scripts/; cat "
+            + date_filename
+            + " |awk '{ print $1 }'"
+        )
+        stdin, stdout, stderr = self.ssh.exec_command(remote_command)
+        # stdout is now something like 19500101
+        # Assume that you get something like Y*YMMDD; so cut off the last 4 digits
+        # (note that we dont know how many places the year has; so we need to cut
+        # from the end)
+        current_date = int(stdout.readlines()[0][:-5])
 
-    ang_range, mid_points = degree_range(N)
+        remote_command = (
+            "cd "
+            + config["basedir"]
+            + "/scripts/; cat "
+            + date_filename
+            + " |awk '{ print $2 }'"
+        )
+        stdin, stdout, stderr = self.ssh.exec_command(remote_command)
+        current_run = int(stdout.readlines()[0])
 
-    labels = labels[::-1]
+        runscript_file = config.get("runscript", config["basedir"] + "/scripts/*run")
+        # POTENTIAL BUG: These things are all very dependent on the runscript's way
+        # of defining time control. It might be better to do this somehow
+        # differently
+        start_year = self.ssh.exec_command(
+            "grep INITIAL_DATE_" + model + " " + runscript_file
+        )[1].readlines()[0]
+        final_year = self.ssh.exec_command(
+            "grep FINAL_DATE_" + model + " " + runscript_file
+        )[1].readlines()[0]
+        # POTENTIAL BUG: What about people who run on monthly basis?
+        run_size = self.ssh.exec_command("grep NYEAR_" + model + " " + runscript_file)[
+            1
+        ].readlines()[0]
+        # Reformat to get just the years and run sizes
+        start_year = int(start_year.split("=")[1].split("-")[0])
+        final_year = int(final_year.split("=")[1].split("-")[0])
+        run_size = int(stripComments(" ".join(run_size.split("=")[1].split())))
 
-    """
-    plots the sectors and the arcs
-    """
-    patches = []
-    for ang, c in zip(ang_range, colors):
-        # sectors
-        patches.append(Wedge((0.0, 0.0), 0.4, *ang, facecolor="w", lw=2))
-        # arcs
-        patches.append(
-            Wedge((0.0, 0.0), 0.4, *ang, width=0.10, facecolor=c, lw=2, alpha=0.5)
+        total_number_of_runs = int((final_year - start_year) / run_size)
+        years_per_day = throughput
+
+        years_left = final_year - current_date
+        days_left = years_left / years_per_day
+        finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
+        r_bar = (
+            " "
+            + str(current_run)
+            + "/"
+            + str(total_number_of_runs)
+            + ", Throughput ~"
+            + str(np.round(years_per_day, 2))
+            + "runs/day"
         )
 
-    [ax.add_patch(p) for p in patches]
-
-    """
-    set the labels (e.g. 'LOW','MEDIUM',...)
-    """
-
-    for mid, lab in zip(mid_points, labels):
-
-        ax.text(
-            0.35 * np.cos(np.radians(mid)),
-            0.35 * np.sin(np.radians(mid)),
-            lab,
-            horizontalalignment="center",
-            verticalalignment="center",
-            fontsize=8,
-            rotation=rot_text(mid),
+        pbar = tqdm(
+            total=total_number_of_runs,
+            desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
+            bar_format="{n}/|/{l_bar} " + r_bar,
         )
-
-    """
-    set the bottom banner and the title
-    """
-    r = Rectangle((-0.4, -0.1), 0.8, 0.1, facecolor="w", lw=2)
-    ax.add_patch(r)
-
-    ax.text(
-        0,
-        -0.05,
-        title,
-        horizontalalignment="center",
-        verticalalignment="center",
-        fontsize=22,
-        fontweight="bold",
-    )
-
-    """
-    plots the arrow now
-    """
-
-    pos = mid_points[abs(arrow - N)]
-
-    ax.arrow(
-        0,
-        0,
-        0.225 * np.cos(np.radians(pos)),
-        0.225 * np.sin(np.radians(pos)),
-        width=0.04,
-        head_width=0.09,
-        head_length=0.1,
-        fc="k",
-        ec="k",
-    )
-
-    ax.add_patch(Circle((0, 0), radius=0.02, facecolor="k"))
-    ax.add_patch(Circle((0, 0), radius=0.01, facecolor="w", zorder=11))
-
-    """
-    removes frame and ticks, and makes axis equal and tight
-    """
-
-    ax.set_frame_on(False)
-    ax.axes.set_xticks([])
-    ax.axes.set_yticks([])
-    ax.axis("equal")
-    plt.tight_layout()
-    fig.savefig(fname, dpi=200)
-    plt.close(fig)
+        pbar.update(current_run)
+        return pbar
 
 
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
-
-
-def run_efficiency(config):
-    log = get_log_output(config)
-    log_df = generate_dataframe_from_esm_logfile(log)
-    diffs = compute_throughput(log_df)[2].tail(10)
-    throughput = datetime.timedelta(1) / diffs["Wall Time"].mean()
-    efficiency = diffs["Wall Time"].mean() / (
-        diffs["Queue Time"].mean() + diffs["Wall Time"].mean()
-    )
-    levels = np.arange(0, 105, 5)
-    arrow_level = int(find_nearest(levels, 100.0 * efficiency) + 1.0)
-    levels = ["%.0f" % number for number in levels]
-    levels = [l + "%" for l in levels]
-    figure_title = config["basedir"].split("/")[-1] + "_efficiency"
-    gauge_figure = os.environ.get("HOME") + "/public_html/" + figure_title + ".png"
-    if os.path.exists(gauge_figure):
-        os.remove(gauge_figure)
-    gauge(
-        labels=levels,
-        colors="RdYlGn_r",
-        arrow=arrow_level,
-        title="Run Efficiency",
-        fname=gauge_figure,
-    )
-    prefix = """
- <!DOCTYPE html>
-<html>
-<head>
-<style>
-* {
-    box-sizing: border-box;
-}
-
-.column {
-    float: left;
-    width: 33.33%;
-    padding: 5px;
-}
-
-/* Clearfix (clear floats) */
-.row::after {
-    content: "";
-    clear: both;
-    display: table;
-}
-</style>
-</head>
-<body>
-
-<div class="row">
-  <div class="column">
-"""
-    suffix = """
-  </div>
-  <div class="column">
-    <img src="pic_file.png" alt="Graph" style="width:100%">
-  </div>
-</div>
-</body>
-</html>
-"""
-    df = pd.DataFrame.from_dict(
-        {
-            "Mean Walltime": diffs["Wall Time"].mean(),
-            "Mean Queuing Time": diffs["Queue Time"].mean(),
-            "Optimal Throughput": throughput,
-            "Actual Throughput (Last 10 Runs)": throughput * efficiency,
-            "Run Efficiency (Last 10 Runs)": efficiency * 100,
-        },
-        orient="index",
-        columns=["Run Statistics"],
-    )
-    html = (
-        prefix.replace("title", figure_title)
-        + df.to_html()
-        + suffix.replace("pic_file.png", figure_title + ".png")
-    )
-    display_html(html, raw=True)
+# TODO:
+# def simulation_timeline(config):
+#    log = get_log_output(config)
+#    log_df = generate_dataframe_from_esm_logfile(log)
+#    # Drop the last entry if it's start
+#    if "start" in log_df.iloc[-1]["State"]:
+#        end_of_log = log_df.iloc[:-1].tail(30)
+#    else:
+#        end_of_log = log_df.tail(30)
+#    end_groups = end_of_log.groupby("Run Number")
+#    f, ax = plt.subplots(1, 1, dpi=150, figsize=(15, 1.5))
+#    for name, group in end_groups:
+#        try:
+#            bdate = group.index[0]
+#            edate = group.index[1]
+#        except IndexError:
+#            print("Sorry, couldn't make a timeline")
+#            plt.close(f)
+#            return
+#        edate, bdate = [mdates.date2num(item) for item in (edate, bdate)]
+#        # The color is the same as the progressbar below, use the colormeter to figure it out.
+#        ax.barh(
+#            0,
+#            edate - bdate,
+#            left=bdate,
+#            height=0.2,
+#            color=(217.0 / 255.0, 83.0 / 255.0, 79.0 / 255.0),
+#            edgecolor="black",
+#        )
+#    ax.set_ylim(-0.5, 0.5)
+#    for direction in ["top", "left", "right"]:
+#        ax.spines[direction].set_visible(False)
+#    ax.yaxis.set_visible(False)
+#    ax.xaxis_date()
+#    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M %d.%m.%y"))

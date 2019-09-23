@@ -2,7 +2,7 @@
 user: a270077
 host: mistral.dkrz.de
 basedir: /work/ba0989/a270077/AWICM_PISM/LGM_011
-model: AWICM_PISM
+model: AWICM
 # Configuration of where the data for monitoring should be copied to on the
 # VISUALIZATION host. Note that this replaces everything up to your main user
 # directory on the supercomputer to keep the experiment trees looking as
