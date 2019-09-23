@@ -8,16 +8,32 @@ import cartopy.crs as ccrs
 import holoviews as hv
 import hvplot.xarray  # noqa
 import geoviews as gv
-
+import panel as pn
 import cmocean
 
 from IPython.core.display import display, HTML
 
 from esm_viz.visualization import get_local_storage_dir_from_config
 
+from ..deployment import Simulation_Monitor
+
+
+class EchamPanel(Simulation_Monitor):
+    def render_pane(self, config):
+        all_timeseries = plot_global_timeseries(config)
+        all_variable_names = list(config["echam"]["Global Timeseries"])
+        names_and_ts = zip(all_variable_names, all_timeseries)
+
+        all_climatologies = plot_global_climatology(config)
+        all_variable_names = list(config["echam"]["Global Climatology"])
+        names_and_clims = zip(all_variable_names, all_climatologies)
+        return pn.Tabs(
+            ("Timeseries", pn.Tabs(*names_and_ts)),
+            ("Climatologies", pn.Tabs(*names_and_clims)),
+        )
+
 
 def plot_global_timeseries(config):
-    display(HTML("<h2> Global Timeseries of ECHAM </h2>"))
     file_dir = get_local_storage_dir_from_config(config) + "/analysis/echam/"
     expid = config["basedir"].split("/")[-1]
     return_list = []
@@ -102,7 +118,6 @@ def plot_global_timeseries(config):
 
 
 def plot_global_climatology(config):
-    display(HTML("<h2> Global Climatologies of ECHAM </h2>"))
     file_dir = get_local_storage_dir_from_config(config) + "/analysis/echam/"
     expid = config["basedir"].split("/")[-1]
     return_list = []

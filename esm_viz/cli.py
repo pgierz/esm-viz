@@ -16,10 +16,11 @@ from crontab import CronTab
 
 
 # For nbconvert programatically:
-import nbconvert
-import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor
-
+# import nbconvert
+# import nbformat
+# from nbconvert.preprocessors import ExecutePreprocessor
+import importlib
+import panel as pn
 
 import esm_viz
 from .deployment import Simulation_Monitor
@@ -229,84 +230,35 @@ def combine(expid, quiet):
     config = read_simulation_config(
         os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
     )
+
     # Remove stuff from the config that we probably won't need:
     for bad_chapter in ["user", "host", "basedir", "coupling"]:
         if bad_chapter in config:
             del config[bad_chapter]
-    viz_path = module_path + "/visualization/"
-    notebooks_to_merge = [viz_path + "read_config.ipynb"]
+
+    tab_list = []
     if "general" in config:
-        for monitoring_element in config.get("general"):
-            if os.path.isfile(
-                viz_path
-                + "general_"
-                + monitoring_element.lower().replace(" ", "_")
-                + ".ipynb"
-            ):
-                notebooks_to_merge.append(
-                    viz_path
-                    + "general_"
-                    + monitoring_element.lower().replace(" ", "_")
-                    + ".ipynb"
-                )
+        general_mon = esm_viz.visualization.general.GeneralPanel.from_config(config)
+        tab_list.append(("General", general_mon.render_pane(config)))
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
-            for monitoring_part in [
-                "Global Timeseries",
-                "Global Climatology",
-                "Timeseries",
-            ]:
-                if monitoring_part in config[component]:
-                    notebooks_to_merge.append(
-                        viz_path
-                        + component
-                        + "_"
-                        + monitoring_part.replace(" ", "_").lower()
-                        + ".ipynb"
-                    )
-    if "custom_notebooks" in config:
-        for notebook in config["custom_notebooks"]:
-            notebooks_to_merge.append(notebook)
-    # Add chapters at the end:
-    appendix_chapters = ["last_update.ipynb"]
-    for appendix_chapter in appendix_chapters:
-        notebooks_to_merge.append(viz_path + "/" + appendix_chapter)
-    print(notebooks_to_merge)
-    with open(expid + ".ipynb", "w") as notebook_merged:
-        notebook_merged.write(merge_notebooks(notebooks_to_merge))
-    with open(".config_ipynb", "w") as config_file:
-        config_file.write(
-            " ".join(
-                [
-                    "test_args.py",
-                    os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml",
-                ]
+            module_for_component = importlib.import_module(
+                "esm_viz.visualization." + component
             )
+            Panel_for_component = getattr(
+                module_for_component, component.capitalize() + "Panel"
+            )
+            comp_mod = Panel_for_component.from_config(config)
+            tab_list.append((component.capitalize(), comp_mod.render_pane(config)))
+    heading = pn.pane.Markdown("# Monitoring: " + config.get("basedir").split("/")[-1])
+    my_mon = pn.Column(heading, pn.Tabs(*tab_list))
+    my_mon.save(
+        os.path.join(
+            os.environ.get("HOME"),
+            "public_html",
+            config.get("basedir").split("/")[-1] + ".html",
         )
-    if not quiet:
-        click.echo("Combined notebook; executing and converting to HTML")
-    # TODO(pgierz): We already have the notebook bits and pieces in memory,
-    # this is currently just needlessly opening and closing files. I feel it is
-    # "OK" for now, but it could cut down the code. So, a TODO for when I get
-    # bored:
-    # Here, we execute the notebook:
-    with open(expid + ".ipynb") as notebookfile:
-        # PG: What's the as_version=4 for?
-        nb = nbformat.read(notebookfile, as_version=4)
-    ten_minutes = 10 * 60
-    ep = ExecutePreprocessor(timeout=ten_minutes)
-    ep.preprocess(nb, {"metadata": {"path": "./"}})
-    # Now save the file (maybe direclty as html?)
-    html_exporter = nbconvert.HTMLExporter()
-    out, resources = nbconvert.exporters.export(html_exporter, nb)
-    with open(
-        os.environ.get("HOME") + "/public_html/" + expid + ".html", "w"
-    ) as website:
-        website.write(out)
-
-    if not quiet:
-        click.echo("Cleaning up...")
-    os.remove(".config_ipynb")
+    )
 
 
 @main.command()

@@ -35,12 +35,14 @@ import numpy as np
 import pandas as pd
 import paramiko
 
+import panel as pn
+
 from tqdm.auto import tqdm
 
 
 # Import from this class (please let this work)
 from ..deployment import Simulation_Monitor
-
+from .logfile import Logfile
 
 SLURM_QUEUE_COMMAND = (
     r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
@@ -112,11 +114,36 @@ def bytes2human(n):
     return "%sB" % n
 
 
-class General(Simulation_Monitor):
-    @classmethod
-    def from_config(cls, config):
-        pass
+class GeneralPanel(Simulation_Monitor):
+    def render_pane(self, config, use_password=True):
+        general = General.from_config(config, use_password)
+        log = Logfile(general.get_log_output(config))
 
+        General_Tabs = []
+        if "queue info" in config["general"]:
+            queue_info = ("Queue Information", general.queue_info())
+            General_Tabs.append(queue_info)
+        if "run efficiency" in config["general"]:
+            run_efficiency = (
+                "Run Statistics",
+                pn.Row(log.run_stats(), log.run_gauge()),
+            )
+            General_Tabs.append(run_efficiency)
+        if "disk usage" in config["general"]:
+            disk_usage = ("Disk Usage", general.plot_usage(config))
+            General_Tabs.append(disk_usage)
+        if "simulation timeline" in config["general"]:
+            pass  # NotYetImplemented
+        if "progress bar" in config["general"]:
+            progress_bar = ("Progress Bar", general.progress_bar(config, log))
+            General_Tabs.append(progress_bar)
+        if "newest log" in config["general"]:
+            pass  # NotYetImplemented
+
+        return pn.Tabs(("General", pn.Tabs(*General_Tabs)))
+
+
+class General(Simulation_Monitor):
     def queue_info(self, verbose=True):
         """
         Gets Batch Scheduler queueing information

@@ -257,6 +257,18 @@ class Simulation_Monitor(object):
         after copying
     """
 
+    @classmethod
+    def from_config(cls, config, use_password=False):
+        return cls(
+            config.get("user"),
+            config.get("host"),
+            config.get("basedir"),
+            config.get("coupling", False),
+            config.get("storagedir"),
+            config.get("required_modules", ["anaconda3", "cdo"]),
+            use_password=use_password,
+        )
+
     def __init__(
         self,
         user,
