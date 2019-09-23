@@ -235,10 +235,12 @@ def combine(expid, quiet):
 
     tab_list = []
     if "general" in config:
+        logging.info("Setting up general monitoring")
         general_mon = esm_viz.visualization.general.GeneralPanel.from_config(config)
         tab_list.append(("General", general_mon.render_pane(config)))
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
+            logging.info("Setting up monitoring for %s", component)
             module_for_component = importlib.import_module(
                 "esm_viz.visualization." + component
             )
