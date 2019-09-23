@@ -233,11 +233,6 @@ def combine(expid, quiet):
         os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
     )
 
-    # Remove stuff from the config that we probably won't need:
-    for bad_chapter in ["user", "host", "basedir", "coupling"]:
-        if bad_chapter in config:
-            del config[bad_chapter]
-
     tab_list = []
     if "general" in config:
         general_mon = esm_viz.visualization.general.GeneralPanel.from_config(config)
