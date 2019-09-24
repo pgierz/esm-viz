@@ -38,6 +38,10 @@ with open("HISTORY.rst") as history_file:
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
+# Strip off the binary crap:
+requirements = [l.split("--no-binary")[0] for l in requirements]
+
+
 setup_requirements = []
 
 test_requirements = []
