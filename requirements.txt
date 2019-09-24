@@ -1,5 +1,6 @@
 Click>=6.0
 cartopy --no-binary cartopy
+cftime
 cmocean
 datashader
 geoviews
