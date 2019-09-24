@@ -5,10 +5,6 @@ datashader
 geoviews
 holoviews
 hvplot
-jupyter_client
-nbconvert>=5.6.0
-nbformat
-nbmerge
 numexpr>=2.6.1
 numpy>=1.12
 pandas>=0.19.2

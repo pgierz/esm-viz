@@ -11,3 +11,6 @@ install:
   - "pip install git+https://github.com/pgierz/esm-viz.git"
 script:
   - flake8 . 
+  - which esm_viz
+  - esm_viz --version
+  - esm_viz show-paths
