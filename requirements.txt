@@ -15,6 +15,7 @@ pyopenssl>=19
 pyproj
 python-crontab
 pyyaml
+setuptools>=36
 shapely --no-binary shapely
 tornado>=5.0
 tqdm
