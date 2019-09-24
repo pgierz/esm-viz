@@ -137,7 +137,7 @@ class GeneralPanel(Simulation_Monitor):
         if "newest log" in config["general"]:
             pass  # NotYetImplemented
 
-        return (*General_Tabs,)
+        return General_Tabs
 
 
 class General(Simulation_Monitor):
