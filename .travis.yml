@@ -5,13 +5,8 @@ python:
 before_install:
   - "sudo apt-get install -y libproj-dev proj-data proj-bin"
   - "sudo apt-get install -y libgeos-dev"
-
-matrix:
-        include:
-                - python: 2.7
-                install: "pip install -r requirements.txt"
-                - python: 2.7
-                install: "pip install git+https://github.com/pgierz/esm-viz.git"
+install: 
+  - "pip install git+https://github.com/pgierz/esm-viz.git"
 script:
   - flake8 . 
   - which esm_viz
