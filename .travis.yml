@@ -8,5 +8,6 @@ before_install:
 install:
   - "pip install -r requirements.txt"
   - "pip install -r requirements_dev.txt"
+  - "pip install --user git+https://github.com/pgierz/esm-viz.git"
 script:
   - flake8 . 
