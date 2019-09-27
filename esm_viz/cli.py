@@ -244,7 +244,8 @@ def combine(expid, quiet):
     if "general" in config:
         logging.info("Setting up general monitoring")
         general_mon = general.GeneralPanel.from_config(config)
-        tab_list.append(("General", general_mon.render_pane(config)))
+        pane = general_mon.render_pane(config)
+        tab_list.append(("General", *pane))
     for component in MODEL_COMPONENTS.get(config["model"]):
         if component in config:
             logging.info("Setting up monitoring for %s", component)
