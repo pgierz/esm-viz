@@ -259,7 +259,7 @@ def combine(expid, quiet):
     heading = pn.pane.Markdown("# Monitoring: " + config.get("basedir").split("/")[-1])
     footing = pn.pane.Markdown(
         "Last update of your monitoring was %s. \n This is `esm-viz`, developed by Dr. Paul Gierz."
-        % datetime.datetime.now("%c")
+        % datetime.datetime.now().strftime("%c")
     )
     my_mon = pn.Column(heading, pn.Tabs(*tab_list), footing)
     my_mon.save(
