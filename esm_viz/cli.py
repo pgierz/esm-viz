@@ -258,10 +258,11 @@ def combine(expid, quiet):
             tab_list.append((component.capitalize(), comp_mod.render_pane(config)))
     heading = pn.pane.Markdown("# Monitoring: " + config.get("basedir").split("/")[-1])
     footing = pn.pane.Markdown(
-        "Last update of your monitoring was %s. \n This is `esm-viz`, developed by Dr. Paul Gierz."
+        "Last update of your monitoring was %s."
         % datetime.datetime.now().strftime("%c")
     )
-    my_mon = pn.Column(heading, pn.Tabs(*tab_list), footing)
+    recognition = pn.pane.Markdown("This is `esm-viz`, developed by Dr. Paul Gierz.")
+    my_mon = pn.Column(heading, pn.Tabs(*tab_list), footing, recognition)
     my_mon.save(
         os.path.join(
             os.environ.get("HOME"),
