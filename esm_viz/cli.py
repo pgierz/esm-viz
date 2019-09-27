@@ -6,9 +6,11 @@
 import os
 import sys
 
+# This could be prettier and sorted. but whatever
 sys.path.append("..")
 import inspect
 import logging
+import datetime
 import time
 
 # First thing before any pf the specific modules are imported, set up a working
@@ -255,7 +257,11 @@ def combine(expid, quiet):
             comp_mod = Panel_for_component.from_config(config)
             tab_list.append((component.capitalize(), comp_mod.render_pane(config)))
     heading = pn.pane.Markdown("# Monitoring: " + config.get("basedir").split("/")[-1])
-    my_mon = pn.Column(heading, pn.Tabs(*tab_list))
+    footing = pn.pane.Markdown(
+        "Last update of your monitoring was %s. \n This is `esm-viz`, developed by Dr. Paul Gierz."
+        % datetime.datetime.now("%c")
+    )
+    my_mon = pn.Column(heading, pn.Tabs(*tab_list), footing)
     my_mon.save(
         os.path.join(
             os.environ.get("HOME"),
