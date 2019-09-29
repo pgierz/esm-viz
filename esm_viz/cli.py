@@ -39,6 +39,14 @@ from .visualization import general
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 
+def autocomplete_yamls():
+    flist = []
+    for f in os.listdir(os.environ("HOME") + ".config/monitoring"):
+        if f.endswith(".yaml"):
+            flist.append(f)
+    return flist
+
+
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -102,8 +110,12 @@ def schedule(expid, frequency):
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
-@click.option(
-    "--expid", default="example", help="The YAML file found in ~/.config/monitoring"
+@click.argument(
+    "expid",
+    type=click.STRING,
+    autocomplete=autocomplete_yamls,
+    default="example",
+    help="The YAML file found in ~/.config/monitoring",
 )
 def deploy(expid, quiet):
     """
@@ -262,6 +274,9 @@ def combine(expid, quiet):
         "Last update of your monitoring was %s."
         % datetime.datetime.now().strftime("%c")
     )
+    # Figure out when the next update will be:
+    # cron = CronTab(user=True)
+
     recognition = pn.pane.Markdown("This is `esm-viz`, developed by Dr. Paul Gierz.")
     my_mon = pn.Column(heading, pn.Tabs(*tab_list), footing, recognition)
     my_mon.save(
