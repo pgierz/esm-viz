@@ -44,7 +44,8 @@ def autocomplete_yamls(ctx, args, incomplete):
     for f in os.listdir(os.environ.get("HOME") + "/.config/monitoring"):
         if f.endswith(".yaml"):
             flist.append(f)
-    return flist
+    reduced_flist = [k for k in flist if incomplete in k]
+    return reduced_flist
 
 
 @click.group(invoke_without_command=True)
@@ -110,8 +111,8 @@ def schedule(expid, frequency):
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
-@click.argument(
-    "expid", type=click.STRING, autocompletion=autocomplete_yamls, default="example"
+@click.option(
+    "--expid", type=click.STRING, autocompletion=autocomplete_yamls, default="example"
 )
 def deploy(expid, quiet):
     """
