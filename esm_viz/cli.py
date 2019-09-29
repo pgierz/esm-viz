@@ -39,7 +39,7 @@ from .visualization import general
 module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 
-def autocomplete_yamls():
+def autocomplete_yamls(ctx, args, incomplete):
     flist = []
     for f in os.listdir(os.environ("HOME") + ".config/monitoring"):
         if f.endswith(".yaml"):
