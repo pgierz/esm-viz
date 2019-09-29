@@ -110,7 +110,7 @@ def schedule(expid, frequency):
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
-@click.argument(
+@click.option(
     "expid",
     type=click.STRING,
     autocompletion=autocomplete_yamls,
