@@ -41,7 +41,7 @@ module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 def autocomplete_yamls(ctx, args, incomplete):
     flist = []
-    for f in os.listdir(os.environ("HOME") + ".config/monitoring"):
+    for f in os.listdir(os.environ.get("HOME") + ".config/monitoring"):
         if f.endswith(".yaml"):
             flist.append(f)
     return flist
