@@ -110,12 +110,8 @@ def schedule(expid, frequency):
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
-@click.option(
-    "expid",
-    type=click.STRING,
-    autocompletion=autocomplete_yamls,
-    default="example",
-    help="The YAML file found in ~/.config/monitoring",
+@click.argument(
+    "expid", type=click.STRING, autocompletion=autocomplete_yamls, default="example"
 )
 def deploy(expid, quiet):
     """
