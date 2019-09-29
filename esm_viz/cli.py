@@ -113,7 +113,7 @@ def schedule(expid, frequency):
 @click.argument(
     "expid",
     type=click.STRING,
-    autocomplete=autocomplete_yamls,
+    autocompletion=autocomplete_yamls,
     default="example",
     help="The YAML file found in ~/.config/monitoring",
 )
