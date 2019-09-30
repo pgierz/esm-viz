@@ -382,9 +382,8 @@ class General(Simulation_Monitor):
 <body>
 
 
-Experiment Progress:
 """
-                + """Done on: """
+                + """Based on current throughput, this run may be done on: """
                 + finishing_date.strftime("%d %b, %Y")
                 + """
 <div id="myProgress">
@@ -396,8 +395,8 @@ Experiment Progress:
                 + str(current_run)
                 + "/"
                 + str(total_number_of_runs)
-                + "Throughput ~"
-                + str(years_per_day)
+                + " Throughput ~"
+                + str(np.round(years_per_day, 2))
                 + """ runs/day</body>"""
             )
             return DOC
