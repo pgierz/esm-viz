@@ -336,23 +336,71 @@ class General(Simulation_Monitor):
         years_left = final_year - current_date
         days_left = years_left / years_per_day
         finishing_date = datetime.datetime.now() + datetime.timedelta(days=days_left)
-        r_bar = (
-            " "
-            + str(current_run)
-            + "/"
-            + str(total_number_of_runs)
-            + ", Throughput ~"
-            + str(np.round(years_per_day, 2))
-            + "runs/day"
-        )
+        using_tqdm = False
+        using_html = True
+        if using_tqdm:
+            r_bar = (
+                " "
+                + str(current_run)
+                + "/"
+                + str(total_number_of_runs)
+                + ", Throughput ~"
+                + str(np.round(years_per_day, 2))
+                + "runs/day"
+            )
 
-        pbar = tqdm(
-            total=total_number_of_runs,
-            desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
-            bar_format="{n}/|/{l_bar} " + r_bar,
-        )
-        pbar.update(current_run)
-        return pbar
+            pbar = tqdm(
+                total=total_number_of_runs,
+                desc="Done on: " + finishing_date.strftime("%d %b, %Y"),
+                bar_format="{n}/|/{l_bar} " + r_bar,
+            )
+            pbar.update(current_run)
+            return pbar
+        if using_html:
+
+            DOC = (
+                """
+<style>
+#myProgress {
+  width: 100%;
+  background-color: #ddd;
+}
+"""
+                + """
+#myBar {
+  width: """
+                + str(100 * current_run / total_number_of_runs)
+                + "%"
+                + """;
+  height: 30px;
+  background-color: #4CAF50;
+  text-align: center;
+  line-height: 30px;
+  color: black;
+}
+</style>
+<body>
+
+
+Experiment Progress:
+"""
+                + """Done on: """
+                + finishing_date.strftime("%d %b, %Y")
+                + """
+<div id="myProgress">
+<div id="myBar">"""
+                + str(100 * current_run / total_number_of_runs)
+                + """%</div>
+</div>
+"""
+                + str(current_run)
+                + "/"
+                + str(total_number_of_runs)
+                + "Throughput ~"
+                + str(years_per_day)
+                + """ runs/day</body>"""
+            )
+            return DOC
 
 
 # TODO:
