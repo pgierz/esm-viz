@@ -135,7 +135,8 @@ class GeneralPanel(Simulation_Monitor):
             progress_bar = ("Progress Bar", general.progress_bar(config, log))
             General_Tabs.append(progress_bar)
         if "newest log" in config["general"]:
-            pass  # NotYetImplemented
+            latest_log = ("Newest Logfile", general.get_logfile_by_time(config))
+            General_Tabs.append(latest_log)
 
         return pn.Tabs(*General_Tabs)
 
@@ -185,6 +186,33 @@ class General(Simulation_Monitor):
             log_file = exp_path + "/scripts/" + expid + ".log"
         stdin, stdout, stderr = self.ssh.exec_command("cat " + log_file)
         return stdout.readlines()
+
+    def get_logfile_by_time(self, config, newest=True):
+        latest = (0,)
+        latestfile = (None,)
+        self._connect()
+        sftp = self.ssh.open_sftp()
+        for fileattr in sftp.listdir_attr(config["basedir"] + "/scripts"):
+            if (
+                fileattr.filename.startswith(config["basedir"].split("/")[-1])
+                and fileattr.st_mtime > latest
+            ):
+                latest = fileattr.st_mtime
+                latestfile = fileattr.filename
+        Header = "<h2> Latest Log: <code>%s</code> </h2>" % os.path.basename(latestfile)
+        with sftp.file(config["basedir"] + "/scripts/" + latestfile) as logfile:
+            log = logfile.readlines()
+        HTML_textbox = (
+            "<textarea rows=40, cols=80, readonly=True> "
+            + "".join(log)
+            + " </textarea>"
+        )
+        return (
+            Header
+            + "<details> <summary> Show log </summary>"
+            + HTML_textbox
+            + "</details>"
+        )
 
     def disk_usage(self, config):
         """
