@@ -188,8 +188,8 @@ class General(Simulation_Monitor):
         return stdout.readlines()
 
     def get_logfile_by_time(self, config, newest=True):
-        latest = (0,)
-        latestfile = (None,)
+        latest = 0
+        latestfile = None
         self._connect()
         sftp = self.ssh.open_sftp()
         for fileattr in sftp.listdir_attr(config["basedir"] + "/scripts"):
