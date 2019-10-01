@@ -119,10 +119,17 @@ def plot_timeseries_with_stats(config, variable):
             start = trend_ds.isel(time=slice(12)).mean(dim="time")
             end = trend_ds.isel(time=slice(-12)).mean(dim="time")
             trend = end - start
-            return (trend,)
+            trend_to_return = (trend,)
     else:
         trend_to_return = (None,)
-    return pn.Row(o, *stats_to_return, *trend_to_return)
+    all_returns = []
+    for stat in stats_to_return:
+        all_returns.append(stat)
+    for trend in trend_to_return:
+        all_returns.append(trend)
+    all_returns.insert(0, o)
+
+    return pn.Row(*all_returns)
 
 
 def plot_global_timeseries(config):
