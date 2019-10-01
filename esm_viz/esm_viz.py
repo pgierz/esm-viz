@@ -37,7 +37,7 @@ def read_simulation_config(config_file):
     config_file : str
         Which file to read to set up the simulation monitoring
     """
-    config_dir = os.environ.get("HOME") + "/.config/monitoring/"
+    config_dir = os.environ.get("HOME") + "/.config/esm_viz/jobs/"
 
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)

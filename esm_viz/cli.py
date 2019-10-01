@@ -292,7 +292,7 @@ def configure():
         "Hi, this is the configure command. It's being built, please be patient and pet the owl."
     )
     return
-    config_dir = os.environ["HOME"] + "./config/monitoring"
+    config_dir = os.environ["HOME"] + "./config/esm_viz/"
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
     if not os.path.isfile("known_supercomputers.yaml"):
