@@ -19,15 +19,9 @@ import matplotlib
 
 matplotlib.use("AGG")
 
-
 import click
 from crontab import CronTab
 
-
-# For nbconvert programatically:
-# import nbconvert
-# import nbformat
-# from nbconvert.preprocessors import ExecutePreprocessor
 import importlib
 import panel as pn
 
@@ -41,7 +35,7 @@ module_path = os.path.dirname(inspect.getfile(esm_viz))
 
 def autocomplete_yamls(ctx, args, incomplete):
     flist = []
-    for f in os.listdir(os.environ.get("HOME") + "/.config/monitoring"):
+    for f in os.listdir(os.environ.get("HOME") + "/.config/esm_viz/jobs"):
         if f.endswith(".yaml"):
             flist.append(f)
     reduced_flist = [k for k in flist if incomplete in k]
@@ -52,7 +46,7 @@ def autocomplete_yamls(ctx, args, incomplete):
 @click.version_option()
 @click.pass_context
 @click.option(
-    "--expid", default="example", help="The YAML file found in ~/.config/monitoring"
+    "--expid", default="example", help="The YAML file found in ~/.config/esm_viz/jobs"
 )
 @click.option(
     "--frequency",
@@ -72,7 +66,7 @@ def main(ctx, expid, frequency, quiet):
 
 @main.command()
 @click.option(
-    "--expid", default="example", help="The YAML file found in ~/.config/monitoring"
+    "--expid", default="example", help="The YAML file found in ~/.config/esm_viz/jobs"
 )
 @click.option(
     "--frequency",
@@ -236,7 +230,7 @@ def deploy(expid, quiet):
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
 @click.option(
-    "--expid", default="example", help="The YAML file found in ~/.config/monitoring"
+    "--expid", default="example", help="The YAML file found in ~/.config/esm_viz/jobs"
 )
 def combine(expid, quiet):
     if not os.path.isdir(os.path.join(os.environ.get("HOME"), "public_html")):
@@ -246,7 +240,7 @@ def combine(expid, quiet):
     else:
         logging.basicConfig(level=logging.INFO)
     config = read_simulation_config(
-        os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
+        os.environ.get("HOME") + "/.config/esm_viz/jobs/" + expid + ".yaml"
     )
 
     tab_list = []
@@ -312,7 +306,7 @@ def configure():
 def edit(expid):
     """Opens the YAML config for ``expid`` in your $EDITOR"""
     click.edit(
-        filename=os.environ.get("HOME") + "/.config/monitoring/" + expid + ".yaml"
+        filename=os.environ.get("HOME") + "/.config/esm_viz/jobs/" + expid + ".yaml"
     )
 
 
