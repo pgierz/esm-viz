@@ -67,6 +67,4 @@ pism:
     Timeseries:
         slvol: 
             file pattern: ${EXP_ID}_pismr_timeseries_*-*.nc
-        
-custom_notebooks:
-        - /home/csys/pgierz/custom_monitoring/OASIS_Fields.ipynb
+
