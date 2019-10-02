@@ -5,7 +5,7 @@ import logging
 import os
 import shutil
 
-import click
+from pprint import pformat
 
 import esm_viz
 import yaml
@@ -32,7 +32,7 @@ def yaml_to_dict(f):
     # I wrapped up the YAML part
     with open(f) as cfg:
         config = yaml.load(cfg, Loader=yaml.FullLoader)
-        click.echo("This config was loaded: %s" % config)
+        logging.debug("This config was loaded: %s", pformat(config))
     return config
 
 
@@ -50,7 +50,7 @@ def read_simulation_config(config_file):
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
     if os.path.isfile(os.path.join(config_dir, config_file + ".yaml")):
-        click.echo(
+        logging.info(
             "Loading Configuration file:",
             os.path.join(config_dir, config_file + ".yaml"),
         )
@@ -59,9 +59,11 @@ def read_simulation_config(config_file):
     # User gave the a file, which might or might not be in the right directory at this point:
     if os.path.isfile(config_file):
         if not os.path.isfile(os.path.join(config_dir, os.path.basename(config_file))):
-            click.echo("Copying file to config folder")
+            logging.info("Copying file to config folder")
             shutil.copyfile(config_file, config_dir + os.path.basename(config_file))
         return yaml_to_dict(config_file)
+    # If we made it this far and didn't hit a return, something is wrong:
+    raise IOError("You did not give an argument for a valid config file!")
 
 
 def walk_up(bottom):
