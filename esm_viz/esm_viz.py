@@ -41,6 +41,8 @@ def read_simulation_config(config_file):
 
     if not os.path.isdir(config_dir):
         os.makedirs(config_dir)
+    if os.path.isfile(os.path.join(config_dir, config_file + ".yaml")):
+        return yaml_to_dict(os.path.join(config_dir, config_file + ".yaml"))
 
     # User gave the a file, which might or might not be in the right directory at this point:
     if os.path.isfile(config_file):
@@ -48,10 +50,6 @@ def read_simulation_config(config_file):
             print("Copying file to config folder")
             shutil.copyfile(config_file, config_dir + os.path.basename(config_file))
         return yaml_to_dict(config_file)
-    elif os.path.isfile(os.path.join(config_dir, config_file)):
-        return read_simulation_config(os.path.join(config_dir, config_file))
-    else:  # Not a file, probably just experiment name
-        return read_simulation_config(config_file + ".yaml")
 
 
 def walk_up(bottom):
