@@ -2,6 +2,8 @@
 This module contains tools for plotting ECHAM timeseries and climatology maps
 """
 
+import datetime
+
 import matplotlib.pyplot as plt
 import xarray as xr
 import cartopy.crs as ccrs
@@ -43,6 +45,39 @@ def stats_for_timeseries(ds, varname):
     return stats
 
 
+def redim_hvplot_long_name_and_units(ds, variable, o):
+    redim_dict = {
+        variable: {
+            "name": getattr(ds[variable], "long_name", None),
+            "unit": getattr(ds[variable], "units", None),
+        }
+    }
+    o = o.redim(**redim_dict)
+    return o
+
+
+def fixup_ECHAM_timestamps(ds):
+    new_timesteps = [
+        datetime.datetime.strptime(
+            str(ts).split(".")[0], ds.time.units.replace("day as ", "").split(".")[0]
+        )
+        for ts in ds.time.data
+    ]
+    ds["time"] = new_timesteps
+    return ds
+
+
+def turn_on_grid(o):
+    o.options(
+        gridstyle={
+            "grid_line_dash": "dotted",
+            "grid_line_color": "gray",
+            "grid_line_width": 0.33,
+        },
+        show_grid=True,
+    )
+
+
 def plot_timeseries_with_stats(config, variable):
 
     file_dir = get_local_storage_dir_from_config(config) + "/analysis/echam/"
@@ -52,6 +87,9 @@ def plot_timeseries_with_stats(config, variable):
     )
     # Fix the time axes:
     ds["time"] = range(len(ds["time"]))
+
+    # Fix the ECHAM time axis to have real units:
+    ds = fixup_ECHAM_timestamps(ds)
 
     o = ds[variable].squeeze().hvplot.line(title=variable)
     # Due to syntax differences, hvplot (actually Bokeh) has slightly different keywords than matplotlib.
@@ -67,14 +105,10 @@ def plot_timeseries_with_stats(config, variable):
         show_grid=True,
         clone=False,
     )
-    redim_dict = {
-        variable: {
-            "name": getattr(ds[variable], "long_name", None),
-            "unit": getattr(ds[variable], "units", None),
-        },
-        "time": {"name": "Simulation Time", "unit": "Years"},
-    }
-    o = o.redim(**redim_dict)
+    o = redim_hvplot_long_name_and_units(ds, variable, o)
+    # Fixup ECHAM timestamps
+    # redim_dict = {"time": {"name": "Simulation Time", "unit": "Years"}}
+    # o = o.redim(**redim_dict)
     if len(ds[variable]) >= 30:
         o_runmean = (
             ds[variable]
@@ -142,6 +176,8 @@ def plot_global_timeseries(config):
         )
         # Fix the time axes:
         ds["time"] = range(len(ds["time"]))
+        # Fix the ECHAM time axis to have real units:
+        ds = fixup_ECHAM_timestamps(ds)
         if "use_hvplot" in config:
             o = ds[variable].squeeze().hvplot.line(title=variable)
             # Due to syntax differences, hvplot (actually Bokeh) has slightly different keywords than matplotlib.
