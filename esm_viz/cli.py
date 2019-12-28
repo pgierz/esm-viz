@@ -28,9 +28,12 @@ import panel as pn
 import esm_viz
 from .deployment import Simulation_Monitor
 from .esm_viz import read_simulation_config, MODEL_COMPONENTS, get_bindir
+from .server import app
 from .visualization import general
 
 module_path = os.path.dirname(inspect.getfile(esm_viz))
+
+
 
 
 def autocomplete_yamls(ctx, args, incomplete):
@@ -102,6 +105,15 @@ def schedule(expid, frequency):
             % (expid, frequency)
         )
 
+
+
+
+
+@main.command()
+@click.option("--debug", default=False, is_flag=True)
+@click.option("--port", type=click.INT, default=8888)
+def server(port, debug):
+    app.run(port=port, debug=debug)
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
