@@ -6,7 +6,7 @@ from simplepam import authenticate
 # Queue stuff:
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.abspath("static/templates"))
 app.secret_key = "!098abctheowlisfluffyxyz123+"
 
 
@@ -21,21 +21,14 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form["uname"]
+        password = request.form["psw"]
         if authenticate(str(username), str(password)):
-            session["username"] = request.form["username"]
+            session["username"] = request.form["uname"]
             return redirect(url_for("index"))
         else:
             return "Invalid username/password"
-    return """
-        <form action="" method="post">
-            <p><input type=text name=username>
-            <p><input type=password name=password>
-            <p><input type=submit value=Login>
-        </form>
-    """
-
+    return render_template("login.html")
 
 @app.route("/logout")
 def logout():
@@ -47,7 +40,10 @@ def logout():
 # TODO: This should just be part of the dashboard
 @app.route("/queue")
 def queue():
-    return "This is the queue!!"
+    return None
+    # queue_df = general.queue_info()
+    # return panel_to_html(pn.Column(queue_df))
+
 
 # With debug=True, Flask server will auto-reload
 # when there are code changes
