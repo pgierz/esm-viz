@@ -1,0 +1,13 @@
+<!-- templates/sidebar.html -->
+
+<a href="{{ url_for('index') }}"><i class="fa fa-fw fa-home"></i>   Home</a>
+{% if not current_user.is_authenticated %}
+<a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i>   Login</a>
+{% else %}
+<a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i>   Logout</a>
+<a href="{{ url_for('dashboard') }}"><i class="fas fa-chalkboard"></i>   Dashboard</a>
+<a href="{{ url_for('queue') }}"><i class="fas fa-stream"></i>   Queues</a>
+<a href="#"><i class="fas fa-cogs"></i>   Setttings</a>
+{% endif %}
+<a href="{{ url_for('public_sims') }}"><i class="fas fa-users"></i>   Public Simulations</a>
+<a href="https://github.com/pgierz/esm-viz/issues"><i class="fas fa-bug"></i>   Report Bug</a>
