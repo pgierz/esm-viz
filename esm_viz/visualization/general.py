@@ -42,7 +42,7 @@ from ..deployment import Simulation_Monitor
 from .logfile import Logfile
 
 SLURM_QUEUE_COMMAND = (
-    r"squeue -u `whoami` -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
+    r"squeue -o '%.18i %.9P %.50j %.8u %.8T %.10M  %.6D %R %Z'"
 )
 
 

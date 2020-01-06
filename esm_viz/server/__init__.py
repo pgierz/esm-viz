@@ -7,7 +7,7 @@ from simplepam import authenticate
 import panel as pn
 
 # Bokeh Imports
-from bokeh.embed import file_html
+from bokeh.embed import file_html, components
 from bokeh.resources import CDN
 
 # Python Standard Library
@@ -29,6 +29,9 @@ import os
 # TODO: This probably should go somewhere else...
 def panel_to_html(panel_obj):
     return file_html(panel_obj.get_root(), CDN)
+
+def panel_to_components(panel_obj):
+    return components(panel_obj.get_root())
 
 
 app = Flask(__name__, template_folder=os.path.abspath("static/templates"))
@@ -97,9 +100,24 @@ def logout():
 
 
 # TODO: This should just be part of the dashboard
-@app.route("/queue")
+@app.route("/queue", methods=["GET", "POST"])
 def queue():
-    return render_template("queue.html")
+    # TODO: Retrieve previously generated queues from db
+    if request.method == "POST":
+        batch_sys = request.form["batch_sys"]
+        is_remote = request.form["is_remote"]
+        username = request.form["uname"] if is_remote else None
+        host = request.form["host"] if is_remote else None
+        queue = models.QueueModel(batch_sys, is_remote, username, host)
+
+    batch_sys_widget = pn.widgets.Select(name="Batch System", options=["slurm",])
+    is_remote_widget = pn.widgets.Checkbox(name="Remote")
+    uname_widget = pn.widgets.TextInput(name='Username', placeholder='User', disabled=(not is_remote_widget.value))
+    host_widget = pn.widgets.TextInput(name='Compute Host', placeholder='Host', disabled=(not is_remote_widget.value))
+    submit_widget = pn.widgets.Button(name="Submit")
+    form = pn.Column(batch_sys_widget, is_remote_widget, uname_widget, host_widget, submit_widget)
+    script, div = panel_to_components(form)
+    return render_template("queue.html", form=div)#, script=script)
 
 
 @app.route("/public_sims")

@@ -111,9 +111,21 @@ def schedule(expid, frequency):
 
 @main.command()
 @click.option("--debug", default=False, is_flag=True)
-@click.option("--port", type=click.INT, default=8888)
+@click.option("--port", type=click.INT, default=8888, help="which port to run on (default 8888)")
 def server(port, debug):
-    app.run(port=port, debug=debug)
+    """
+    Runs the esm_viz server application
+    """
+    """
+    Parameters
+    ----------
+    port : int
+        The port number to listen on
+    debug : bool
+        Run app in debug mode
+    """
+    app.run(port=port, debug=True) #debug)
+
 
 @main.command()
 @click.option("--quiet", default=False, is_flag=True)
