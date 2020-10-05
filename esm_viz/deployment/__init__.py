@@ -131,7 +131,8 @@ def get_password_for_machine(user, host):
     -----
         Uses f strings, might be Python 3 specific
     """
-    print("To set up simulation monitoring for %s, I need to know your password" % host)
+    print("Could not find existing public key for %s in ~/.ssh/." % host)
+    print("To set up simulation monitoring for %s, I need to know your password." % host)
     print("Don't worry, it will not be stored to disk.")
     passprompt = "Please enter the password for %s@%s: " % (user, host)
     return getpass.getpass(prompt=passprompt)
